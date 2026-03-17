@@ -1,0 +1,83 @@
+<div class="devis-container">
+  <div class="header">
+    <div>
+      <h1>Devis</h1>
+      <p class="subtitle">{{ filteredDevis.length }} devis</p>
+    </div>
+    <button class="btn-add" routerLink="/commercial/devis/nouveau">+ Nouveau devis</button>
+  </div>
+
+  <!-- Filtres -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input [(ngModel)]="searchTerm" (ngModelChange)="filterDevis()" placeholder="Rechercher...">
+    </div>
+    <select [(ngModel)]="statutFilter" (ngModelChange)="filterDevis()" class="filter-select">
+      <option value="">Tous les statuts</option>
+      <option value="brouillon">Brouillon</option>
+      <option value="envoyé">Envoyé</option>
+      <option value="accepté">Accepté</option>
+      <option value="refusé">Refusé</option>
+      <option value="expiré">Expiré</option>
+    </select>
+    <select [(ngModel)]="dateFilter" (ngModelChange)="filterDevis()" class="filter-select">
+      <option value="">Toutes les dates</option>
+      <option value="today">Aujourd'hui</option>
+      <option value="week">Cette semaine</option>
+      <option value="month">Ce mois</option>
+    </select>
+  </div>
+
+  <!-- Tableau -->
+  <div class="table-container" *ngIf="filteredDevis.length > 0; else emptyState">
+    <table class="devis-table">
+      <thead>
+        <tr>
+          <th (click)="sortBy('numero')">N° devis</th>
+          <th (click)="sortBy('client_nom')">Client</th>
+          <th (click)="sortBy('date_creation')">Date</th>
+          <th (click)="sortBy('montant_ttc')">Montant</th>
+          <th (click)="sortBy('statut')">Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let devis of filteredDevis">
+          <td>{{ devis.numero }}</td>
+          <td>{{ devis.client_nom || '-' }}</td>
+          <td>{{ devis.date_creation | date:'dd/MM/yyyy' }}</td>
+          <td>{{ devis.montant_ttc | number }} FCFA</td>
+          <td><span class="badge" [class]="devis.statut">{{ devis.statut }}</span></td>
+          <td class="actions">
+            <button class="btn-icon" [routerLink]="['/commercial/devis', devis.id]" title="Voir">👁️</button>
+            <button class="btn-icon" [routerLink]="['/commercial/devis', devis.id, 'edit']" title="Modifier">✏️</button>
+            <button class="btn-icon" (click)="duplicateDevis(devis)" title="Dupliquer">📋</button>
+            <button class="btn-icon delete" (click)="confirmDelete(devis)" title="Supprimer">🗑️</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ng-template #emptyState>
+    <div class="empty-state">
+      <div class="empty-icon">📝</div>
+      <h2>Aucun devis</h2>
+      <p>Créez votre premier devis</p>
+      <button class="btn-primary" routerLink="/commercial/devis/nouveau">+ Créer un devis</button>
+    </div>
+  </ng-template>
+
+  <!-- Modal de confirmation -->
+  <div class="modal" *ngIf="showDeleteModal">
+    <div class="modal-content">
+      <h3>Confirmer la suppression</h3>
+      <p>Supprimer le devis <strong>{{ devisToDelete?.numero }}</strong> ?</p>
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="showDeleteModal = false">Annuler</button>
+        <button class="btn-delete" (click)="deleteDevis()">🗑️ Supprimer</button>
+      </div>
+    </div>
+  </div>
+</div>

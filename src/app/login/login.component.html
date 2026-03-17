@@ -1,0 +1,66 @@
+<div class="min-h-screen flex items-center justify-center bg-white py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8 login-card">
+    <div>
+      <h2 class="mt-6 text-center text-3xl font-extrabold login-title">
+        PULSEBUSINESS
+      </h2>
+      <p class="mt-2 text-center text-sm text-gray-600">
+        Connectez-vous à votre espace
+      </p>
+    </div>
+    
+    <form class="mt-8 space-y-6" (ngSubmit)="onSubmit()">
+      <div class="rounded-md shadow-sm -space-y-px">
+        <div>
+          <label for="email" class="sr-only">Email</label>
+          <input id="email" name="email" type="email" required 
+                 class="login-input rounded-t-md" 
+                 placeholder="Email" [(ngModel)]="email">
+        </div>
+        <div>
+          <label for="password" class="sr-only">Mot de passe</label>
+          <input id="password" name="password" type="password" required 
+                 class="login-input rounded-b-md" 
+                 placeholder="Mot de passe" [(ngModel)]="password">
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          <input id="remember-me" name="remember-me" type="checkbox" 
+                 class="h-4 w-4 text-rose-600 focus:ring-rose-500 border-gray-300 rounded">
+          <label for="remember-me" class="ml-2 block text-sm text-gray-900">
+            Se souvenir de moi
+          </label>
+        </div>
+
+        <div class="text-sm">
+          <a href="#" class="login-link">
+            Mot de passe oublié ?
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <button type="submit" class="w-full login-button">
+          Se connecter
+        </button>
+      </div>
+    </form>
+
+    <div class="login-separator"></div>
+
+    <div class="text-center">
+      <p class="text-sm text-gray-600">
+        Pas encore de compte ?
+        <a href="#" class="login-link font-medium">
+          Créer un compte
+        </a>
+      </p>
+    </div>
+
+    <div class="login-footer">
+      © 2024 PulseBusiness. Tous droits réservés.
+    </div>
+  </div>
+</div>

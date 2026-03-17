@@ -1,0 +1,218 @@
+<aside class="sidebar" [class.collapsed]="isCollapsed">
+  <!-- Logo avec toggle -->
+  <div class="logo-area">
+    <div class="logo-mark"></div>
+    <span class="logo-text" *ngIf="!isCollapsed">PULSEBUSINESS</span>
+    <button class="toggle-btn" (click)="toggleSidebar()" [title]="isCollapsed ? 'Développer' : 'Réduire'">
+      <span class="toggle-icon">{{ isCollapsed ? '→' : '←' }}</span>
+    </button>
+  </div>
+
+  <!-- Profil DYNAMIQUE (cliquable) -->
+  <div class="user-profile" (click)="goToProfile()" [class.collapsed]="isCollapsed">
+    <div class="user-avatar">
+      <span>{{ initiales }}</span>
+    </div>
+    <div class="user-info" *ngIf="!isCollapsed">
+      <div class="user-name">{{ displayName }}</div>
+      <div class="user-role">{{ profil?.fonction || 'Administrateur' }}</div>
+      <span class="user-badge">{{ profil?.entreprise || 'Entreprise' }}</span>
+    </div>
+  </div>
+
+  <!-- Navigation principale -->
+  <nav class="nav-menu">
+    <!-- DASHBOARD PRINCIPAL -->
+    <a routerLink="/dashboard" routerLinkActive="active" class="nav-link" [class.collapsed]="isCollapsed" [title]="isCollapsed ? 'Tableau de bord' : ''">
+      <span class="nav-icon">📊</span>
+      <span class="nav-label" *ngIf="!isCollapsed">Tableau de bord</span>
+    </a>
+
+    <!-- CLIENTS -->
+    <a routerLink="/clients" routerLinkActive="active" class="nav-link" [class.collapsed]="isCollapsed" [title]="isCollapsed ? 'Clients' : ''">
+      <span class="nav-icon">👥</span>
+      <span class="nav-label" *ngIf="!isCollapsed">Clients</span>
+    </a>
+
+    <!-- FACTURES -->
+    <a routerLink="/factures" routerLinkActive="active" class="nav-link" [class.collapsed]="isCollapsed" [title]="isCollapsed ? 'Factures' : ''">
+      <span class="nav-icon">📄</span>
+      <span class="nav-label" *ngIf="!isCollapsed">Factures</span>
+    </a>
+
+    <!-- CHANTIERS -->
+    <a routerLink="/chantiers" routerLinkActive="active" class="nav-link" [class.collapsed]="isCollapsed" [title]="isCollapsed ? 'Chantiers' : ''">
+      <span class="nav-icon">🏗️</span>
+      <span class="nav-label" *ngIf="!isCollapsed">Chantiers</span>
+    </a>
+
+    <!-- COMMERCIAL -->
+    <div class="nav-group" [class.open]="openMenus['commercial']" [class.collapsed]="isCollapsed">
+      <button (click)="toggleMenu('commercial')" class="group-btn" [class.collapsed]="isCollapsed" [title]="isCollapsed ? 'Commercial' : ''">
+        <span class="nav-icon">💼</span>
+        <span class="nav-label" *ngIf="!isCollapsed">Commercial</span>
+        <span class="group-chevron" *ngIf="!isCollapsed">{{ openMenus['commercial'] ? '▼' : '▶' }}</span>
+      </button>
+      <div class="submenu" *ngIf="openMenus['commercial'] && !isCollapsed">
+        <a routerLink="/commercial/dashboard" class="submenu-link">📊 Tableau de bord</a>
+        <a routerLink="/commercial/devis" class="submenu-link">📝 Devis</a>
+        <a routerLink="/commercial/ventes" class="submenu-link">💰 Ventes</a>
+        <a routerLink="/commercial/contrats" class="submenu-link">📄 Contrats</a>
+        <a routerLink="/commercial/recouvrement" class="submenu-link">💸 Recouvrement</a>
+      </div>
+    </div>
+
+    <!-- FINANCE -->
+    <div class="nav-group" [class.open]="openMenus['finance']" [class.collapsed]="isCollapsed">
+      <button (click)="toggleMenu('finance')" class="group-btn" [class.collapsed]="isCollapsed" [title]="isCollapsed ? 'Finance' : ''">
+        <span class="nav-icon">💰</span>
+        <span class="nav-label" *ngIf="!isCollapsed">Finance</span>
+        <span class="group-chevron" *ngIf="!isCollapsed">{{ openMenus['finance'] ? '▼' : '▶' }}</span>
+      </button>
+      <div class="submenu" *ngIf="openMenus['finance'] && !isCollapsed">
+        <a routerLink="/finance/dashboard" class="submenu-link">📊 Tableau de bord</a>
+        <a routerLink="/finance/recouvrement" class="submenu-link">💰 Recouvrement</a>
+        <a routerLink="/finance/tresorerie" class="submenu-link">💳 Trésorerie</a>
+        <a routerLink="/finance/banque" class="submenu-link">🏦 Banque</a>
+        <a routerLink="/finance/caisse" class="submenu-link">💵 Caisse</a>
+        <a routerLink="/finance/mobile-money" class="submenu-link">📱 Mobile Money</a>
+        <a routerLink="/finance/od" class="submenu-link">📋 OD</a>
+        <a routerLink="/finance/budgets" class="submenu-link">📈 Budgets</a>
+        <a routerLink="/finance/comptabilite" class="submenu-link">📚 Comptabilité</a>
+      </div>
+    </div>
+
+    <!-- RESSOURCES HUMAINES -->
+    <div class="nav-group" [class.open]="openMenus['rh']" [class.collapsed]="isCollapsed">
+      <button (click)="toggleMenu('rh')" class="group-btn" [class.collapsed]="isCollapsed" [title]="isCollapsed ? 'RH' : ''">
+        <span class="nav-icon">👔</span>
+        <span class="nav-label" *ngIf="!isCollapsed">Ressources Humaines</span>
+        <span class="group-chevron" *ngIf="!isCollapsed">{{ openMenus['rh'] ? '▼' : '▶' }}</span>
+      </button>
+      <div class="submenu" *ngIf="openMenus['rh'] && !isCollapsed">
+        <a routerLink="/rh/dashboard" class="submenu-link">📊 Dashboard RH</a>
+        <a routerLink="/rh/effectifs" class="submenu-link">👥 Effectifs</a>
+        <a routerLink="/rh/paie" class="submenu-link">💵 Paie</a>
+        <a routerLink="/rh/securite" class="submenu-link">🛡️ Sécurité</a>
+        <a routerLink="/rh/candidatures" class="submenu-link">📝 Candidatures</a>
+        <a routerLink="/rh/entretiens" class="submenu-link">🤝 Entretiens</a>
+        <a routerLink="/rh/formations" class="submenu-link">🎓 Formations</a>
+        <a routerLink="/rh/evaluations" class="submenu-link">📊 Évaluations</a>
+        <a routerLink="/rh/competences" class="submenu-link">⚡ Compétences</a>
+      </div>
+    </div>
+
+    <!-- STOCK -->
+    <div class="nav-group" [class.open]="openMenus['stock']" [class.collapsed]="isCollapsed">
+      <button (click)="toggleMenu('stock')" class="group-btn" [class.collapsed]="isCollapsed" [title]="isCollapsed ? 'Stock' : ''">
+        <span class="nav-icon">📦</span>
+        <span class="nav-label" *ngIf="!isCollapsed">Stock</span>
+        <span class="group-chevron" *ngIf="!isCollapsed">{{ openMenus['stock'] ? '▼' : '▶' }}</span>
+      </button>
+      <div class="submenu" *ngIf="openMenus['stock'] && !isCollapsed">
+        <a routerLink="/stock/dashboard" class="submenu-link">📊 Tableau de bord</a>
+        <a routerLink="/stock/articles" class="submenu-link">📦 Articles</a>
+        <a routerLink="/stock/categories" class="submenu-link">📂 Catégories</a>
+        <a routerLink="/stock/mouvements" class="submenu-link">🔄 Mouvements</a>
+        <a routerLink="/stock/inventaire" class="submenu-link">📊 Inventaire</a>
+        <a routerLink="/stock/fournisseurs" class="submenu-link">🏭 Fournisseurs</a>
+      </div>
+    </div>
+
+    <!-- TRANSPORT -->
+    <div class="nav-group" [class.open]="openMenus['transport']" [class.collapsed]="isCollapsed">
+      <button (click)="toggleMenu('transport')" class="group-btn" [class.collapsed]="isCollapsed" [title]="isCollapsed ? 'Transport' : ''">
+        <span class="nav-icon">🚛</span>
+        <span class="nav-label" *ngIf="!isCollapsed">Transport</span>
+        <span class="group-chevron" *ngIf="!isCollapsed">{{ openMenus['transport'] ? '▼' : '▶' }}</span>
+      </button>
+      <div class="submenu" *ngIf="openMenus['transport'] && !isCollapsed">
+        <a routerLink="/transport/dashboard" class="submenu-link">📊 Tableau de bord</a>
+        <a routerLink="/transport/vehicules" class="submenu-link">🚗 Véhicules</a>
+        <a routerLink="/transport/chauffeurs" class="submenu-link">👨‍✈️ Chauffeurs</a>
+        <a routerLink="/transport/trajets" class="submenu-link">📍 Trajets</a>
+        <a routerLink="/transport/maintenance" class="submenu-link">🔧 Maintenance</a>
+        <a routerLink="/transport/carburant" class="submenu-link">⛽ Carburant</a>
+      </div>
+    </div>
+
+    <!-- ADMINISTRATION -->
+    <div class="nav-group" [class.open]="openMenus['administration']" [class.collapsed]="isCollapsed">
+      <button (click)="toggleMenu('administration')" class="group-btn" [class.collapsed]="isCollapsed" [title]="isCollapsed ? 'Administration' : ''">
+        <span class="nav-icon">🏢</span>
+        <span class="nav-label" *ngIf="!isCollapsed">Administration</span>
+        <span class="group-chevron" *ngIf="!isCollapsed">{{ openMenus['administration'] ? '▼' : '▶' }}</span>
+      </button>
+      <div class="submenu" *ngIf="openMenus['administration'] && !isCollapsed">
+        <a routerLink="/administration/dashboard" class="submenu-link">📊 Tableau de bord</a>
+        <a routerLink="/administration/entites" class="submenu-link">🏢 Entités</a>
+        <a routerLink="/administration/filiales" class="submenu-link">🏭 Filiales</a>
+        <a routerLink="/administration/departements" class="submenu-link">📂 Départements</a>
+        <a routerLink="/administration/postes" class="submenu-link">👔 Postes</a>
+      </div>
+    </div>
+
+    <!-- PRODUCTION -->
+    <div class="nav-group" [class.open]="openMenus['production']" [class.collapsed]="isCollapsed">
+      <button (click)="toggleMenu('production')" class="group-btn" [class.collapsed]="isCollapsed" [title]="isCollapsed ? 'Production' : ''">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label" *ngIf="!isCollapsed">Production</span>
+        <span class="group-chevron" *ngIf="!isCollapsed">{{ openMenus['production'] ? '▼' : '▶' }}</span>
+      </button>
+      <div class="submenu" *ngIf="openMenus['production'] && !isCollapsed">
+        <a routerLink="/production/dashboard" class="submenu-link">📊 Tableau de bord</a>
+        <a routerLink="/production/equipements" class="submenu-link">⚙️ Équipements</a>
+        <a routerLink="/production/plannings" class="submenu-link">📅 Plannings</a>
+        <a routerLink="/production/ordres" class="submenu-link">📋 Ordres</a>
+        <a routerLink="/production/qualite" class="submenu-link">✅ Qualité</a>
+      </div>
+    </div>
+
+    <!-- INTERNATIONAL -->
+    <div class="nav-group" [class.open]="openMenus['international']" [class.collapsed]="isCollapsed">
+      <button (click)="toggleMenu('international')" class="group-btn" [class.collapsed]="isCollapsed" [title]="isCollapsed ? 'International' : ''">
+        <span class="nav-icon">🌍</span>
+        <span class="nav-label" *ngIf="!isCollapsed">International</span>
+        <span class="group-chevron" *ngIf="!isCollapsed">{{ openMenus['international'] ? '▼' : '▶' }}</span>
+      </button>
+      <div class="submenu" *ngIf="openMenus['international'] && !isCollapsed">
+        <a routerLink="/international/dashboard" class="submenu-link">📊 Tableau de bord</a>
+        <a routerLink="/international/douanes" class="submenu-link">📋 Douanes</a>
+        <a routerLink="/international/transitaires" class="submenu-link">🚛 Transitaires</a>
+        <a routerLink="/international/incoterms" class="submenu-link">📜 Incoterms</a>
+        <a routerLink="/international/reglements" class="submenu-link">💶 Règlements</a>
+      </div>
+    </div>
+
+    <!-- Séparateur -->
+    <div class="divider" *ngIf="!isCollapsed"></div>
+
+    <!-- PARAMÈTRES -->
+    <a routerLink="/parametres" routerLinkActive="active" class="nav-link" [class.collapsed]="isCollapsed" [title]="isCollapsed ? 'Paramètres' : ''">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label" *ngIf="!isCollapsed">Paramètres</span>
+    </a>
+
+    <!-- PROFIL -->
+    <a routerLink="/profil" routerLinkActive="active" class="nav-link" [class.collapsed]="isCollapsed" [title]="isCollapsed ? 'Mon profil' : ''">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label" *ngIf="!isCollapsed">Mon profil</span>
+    </a>
+
+    <!-- DÉCONNEXION -->
+    <button (click)="logout()" class="nav-link logout-btn" [class.collapsed]="isCollapsed" [title]="isCollapsed ? 'Déconnexion' : ''">
+      <span class="nav-icon">🚪</span>
+      <span class="nav-label" *ngIf="!isCollapsed">Déconnexion</span>
+    </button>
+  </nav>
+
+  <!-- Footer -->
+  <div class="sidebar-footer" *ngIf="!isCollapsed">
+    <span class="version">Version 5.0.0</span>
+    <span class="separator">•</span>
+    <span class="env">Production</span>
+  </div>
+  <div class="sidebar-footer-mini" *ngIf="isCollapsed">
+    <span class="version-mini" title="Version 5.0.0">v5</span>
+  </div>
+</aside>
