@@ -3,5 +3,12 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist/pulsebusiness",
   "devCommand": "npm start",
-  "installCommand": "npm install"
+  "installCommand": "npm install --legacy-peer-deps",
+  "framework": "angular",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }

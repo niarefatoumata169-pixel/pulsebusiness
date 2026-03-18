@@ -91,6 +91,24 @@ import { ApiService } from '../services/api/api.service';
           <p>Première visite ? <a routerLink="/register">Créer un compte</a></p>
         </div>
 
+        <!-- Accès démo -->
+        <div class="demo-section">
+          <p class="demo-title">🔐 Accès démonstration</p>
+          <div class="demo-credentials">
+            <div class="demo-row">
+              <span>Email:</span>
+              <strong>demo@pulsebusiness.com</strong>
+            </div>
+            <div class="demo-row">
+              <span>Mot de passe:</span>
+              <strong>123456</strong>
+            </div>
+          </div>
+          <button class="btn-demo" (click)="fillDemo()" [disabled]="loading">
+            Remplir automatiquement
+          </button>
+        </div>
+
         <a routerLink="/" class="back-link">← Retour à l'accueil</a>
       </div>
     </div>
@@ -107,18 +125,18 @@ import { ApiService } from '../services/api/api.service';
 
     .login-card {
       background: white;
-      border-radius: 24px;
+      border-radius: 20px;
       padding: 48px;
       width: 100%;
-      max-width: 440px;
+      max-width: 480px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     }
 
     .logo {
       text-align: center;
-      font-size: 32px;
+      font-size: 36px;
       font-weight: 800;
-      margin-bottom: 28px;
+      margin-bottom: 32px;
       letter-spacing: -1px;
     }
 
@@ -127,24 +145,24 @@ import { ApiService } from '../services/api/api.service';
 
     h2 {
       color: #1F2937;
-      font-size: 28px;
+      font-size: 32px;
       font-weight: 700;
-      margin: 0 0 6px;
+      margin: 0 0 8px;
       text-align: center;
     }
 
     .subtitle {
       color: #6B7280;
-      font-size: 15px;
+      font-size: 16px;
       text-align: center;
-      margin-bottom: 28px;
+      margin-bottom: 32px;
     }
 
     .alert-error, .alert-success {
       padding: 14px 18px;
       border-radius: 10px;
-      margin-bottom: 22px;
-      font-size: 14px;
+      margin-bottom: 24px;
+      font-size: 15px;
     }
 
     .alert-error {
@@ -160,15 +178,15 @@ import { ApiService } from '../services/api/api.service';
     }
 
     .form-group {
-      margin-bottom: 22px;
+      margin-bottom: 24px;
     }
 
     label {
       display: block;
-      margin-bottom: 7px;
+      margin-bottom: 8px;
       color: #4B5563;
       font-weight: 500;
-      font-size: 14px;
+      font-size: 15px;
     }
 
     .input-group {
@@ -186,9 +204,9 @@ import { ApiService } from '../services/api/api.service';
 
     input {
       width: 100%;
-      padding: 14px 14px 14px 46px;
+      padding: 14px 14px 14px 48px;
       border: 2px solid #FCE7F3;
-      border-radius: 10px;
+      border-radius: 12px;
       font-size: 16px;
       transition: all 0.3s;
       background: #F9FAFB;
@@ -218,36 +236,36 @@ import { ApiService } from '../services/api/api.service';
 
     .field-error {
       color: #EF4444;
-      font-size: 12px;
-      margin-top: 5px;
+      font-size: 13px;
+      margin-top: 6px;
     }
 
     .form-options {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 26px;
+      margin-bottom: 28px;
     }
 
     .checkbox {
       display: flex;
       align-items: center;
-      gap: 7px;
+      gap: 8px;
       color: #4B5563;
-      font-size: 14px;
+      font-size: 15px;
       cursor: pointer;
     }
 
     .checkbox input[type="checkbox"] {
-      width: 17px;
-      height: 17px;
+      width: 18px;
+      height: 18px;
       cursor: pointer;
     }
 
     .forgot-link {
       color: #EC4899;
       text-decoration: none;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 500;
       transition: color 0.2s;
     }
@@ -259,12 +277,12 @@ import { ApiService } from '../services/api/api.service';
 
     .btn-login {
       width: 100%;
-      padding: 15px;
+      padding: 16px;
       background: #EC4899;
       color: white;
       border: none;
-      border-radius: 10px;
-      font-size: 17px;
+      border-radius: 12px;
+      font-size: 18px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s;
@@ -298,14 +316,14 @@ import { ApiService } from '../services/api/api.service';
 
     .register-section {
       text-align: center;
-      margin: 22px 0;
-      padding: 16px 0;
+      margin: 24px 0;
+      padding: 18px 0;
       border-top: 1px solid #FCE7F3;
     }
 
     .register-section p {
       color: #6B7280;
-      font-size: 14px;
+      font-size: 15px;
       margin: 0;
     }
 
@@ -319,13 +337,83 @@ import { ApiService } from '../services/api/api.service';
       text-decoration: underline;
     }
 
+    .demo-section {
+      background: #F9FAFB;
+      border: 2px dashed #FCE7F3;
+      border-radius: 14px;
+      padding: 18px;
+      margin: 24px 0;
+    }
+
+    .demo-title {
+      color: #6B7280;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0 0 14px;
+      text-align: center;
+    }
+
+    .demo-credentials {
+      background: white;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .demo-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #FCE7F3;
+    }
+
+    .demo-row:last-child {
+      border-bottom: none;
+    }
+
+    .demo-row span {
+      color: #6B7280;
+      font-size: 14px;
+    }
+
+    .demo-row strong {
+      color: #EC4899;
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    .btn-demo {
+      width: 100%;
+      padding: 12px;
+      background: #EC4899;
+      border: 1px solid #EC4899;
+      color: white;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-demo:hover:not(:disabled) {
+      background: #DB2777;
+      transform: translateY(-1px);
+    }
+
+    .btn-demo:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .back-link {
       display: block;
       text-align: center;
-      margin-top: 22px;
+      margin-top: 24px;
       color: #9CA3AF;
       text-decoration: none;
-      font-size: 13px;
+      font-size: 14px;
       transition: color 0.2s;
     }
 
@@ -352,6 +440,11 @@ export class LoginComponent implements OnInit {
     if (this.api.getToken()) {
       this.router.navigate(['/dashboard']);
     }
+  }
+
+  fillDemo() {
+    this.email = 'demo@pulsebusiness.com';
+    this.password = '123456';
   }
 
   async onSubmit() {
