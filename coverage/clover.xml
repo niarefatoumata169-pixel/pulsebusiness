@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1773719387510" clover="3.2.0">
-  <project timestamp="1773719387510" name="All files">
+<coverage generated="1773779457860" clover="3.2.0">
+  <project timestamp="1773779457860" name="All files">
     <metrics statements="76" coveredstatements="30" conditionals="11" coveredconditionals="4" methods="8" coveredmethods="4" elements="95" coveredelements="38" complexity="0" loc="76" ncloc="76" packages="1" files="2" classes="2"/>
     <file name="base.controller.ts" path="/Users/mac/pulsebusiness-backend/src/controllers/base.controller.ts">
       <metrics statements="28" coveredstatements="2" conditionals="4" coveredconditionals="0" methods="3" coveredmethods="0"/>

@@ -1,13 +1,20 @@
 import { Router } from 'express';
-import { FactureController } from '../controllers/facture.controller';
+import { authenticateToken } from '../middleware/auth';
+import {
+  getAllFactures,
+  getFactureById,
+  createFacture,
+  updateFacture,
+  deleteFacture
+} from '../controllers/facture.controller';
 
 const router = Router();
 
-router.get('/', FactureController.getAll);
-router.get('/:id', FactureController.getById);
-router.post('/', FactureController.create);
-router.put('/:id', FactureController.update);
-router.patch('/:id/statut', FactureController.updateStatut);
-router.delete('/:id', FactureController.delete);
+// Routes factures
+router.get('/', authenticateToken, getAllFactures);
+router.get('/:id', authenticateToken, getFactureById);
+router.post('/', authenticateToken, createFacture);
+router.put('/:id', authenticateToken, updateFacture);
+router.delete('/:id', authenticateToken, deleteFacture);
 
 export default router;
