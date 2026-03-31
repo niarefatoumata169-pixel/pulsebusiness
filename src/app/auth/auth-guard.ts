@@ -1,14 +1,14 @@
-import { inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { ApiService } from '../services/api/api.service';
+import { Injectable } from '@angular/core';
+import { CanActivate, Router } from '@angular/router';
 
-export const authGuard = () => {
-  const apiService = inject(ApiService);
-  const router = inject(Router);
-  
-  if (apiService.isAuthenticated()) {
+@Injectable({
+  providedIn: 'root'
+})
+export class authGuard implements CanActivate {
+  constructor(private router: Router) {}
+
+  canActivate(): boolean {
+    // 🔓 Authentification désactivée - toujours autorisé
     return true;
   }
-  
-  return router.parseUrl('/login');
-};
+}

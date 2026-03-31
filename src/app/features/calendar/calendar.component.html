@@ -1,0 +1,56 @@
+<div class="calendar-container" [class.visible]="isVisible">
+  <!-- Bouton toggle -->
+  <button class="cal-toggle" (click)="toggleCalendar()">
+    <span class="cal-icon">{{ isVisible ? '✕' : '📅' }}</span>
+  </button>
+
+  <!-- Calendrier -->
+  <div class="calendar">
+    <div class="cal-header">
+      <span>Calendrier</span>
+      <button class="cal-close" (click)="hideCalendar()">✕</button>
+    </div>
+
+    <!-- Navigation mois/année -->
+    <div class="cal-nav">
+      <button class="nav-btn" (click)="prevMonth()">◀</button>
+      <span class="month-year">{{ monthNames[currentMonth] }} {{ currentYear }}</span>
+      <button class="nav-btn" (click)="nextMonth()">▶</button>
+    </div>
+
+    <!-- Jours de la semaine -->
+    <div class="cal-weekdays">
+      <span *ngFor="let day of weekdays">{{ day }}</span>
+    </div>
+
+    <!-- Grille des jours -->
+    <div class="cal-days">
+      <button
+        *ngFor="let day of days"
+        class="cal-day"
+        [class.other-month]="day.otherMonth"
+        [class.selected]="isSelected(day.date)"
+        [class.today]="isToday(day.date)"
+        (click)="selectDate(day.date)">
+        {{ day.dayNumber }}
+      </button>
+    </div>
+
+    <!-- Info date sélectionnée -->
+    <div class="cal-selected" *ngIf="selectedDate">
+      <span>📅 Sélectionné : </span>
+      <strong>{{ selectedDate | date:'dd/MM/yyyy' }}</strong>
+    </div>
+
+    <!-- Boutons mémoire -->
+    <div class="cal-footer">
+      <button class="cal-memo-btn" (click)="saveToMemo()">💾 Mémoriser</button>
+      <button class="cal-memo-btn" (click)="useMemo()">📋 Utiliser</button>
+      <button class="cal-memo-btn" (click)="clearMemo()">🗑️ Effacer mémo</button>
+    </div>
+
+    <div class="cal-shortcuts">
+      <small>Mémo : sauvegarde la date sélectionnée</small>
+    </div>
+  </div>
+</div>

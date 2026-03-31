@@ -1,0 +1,497 @@
+<div class="qualite-container">
+  <div class="header">
+    <div>
+      <h1>Gestion Qualité</h1>
+      <p class="subtitle">
+        {{ controles.length }} contrôle(s) • 
+        <span class="non-conforme">{{ getNonConformesCount() }} non-conformité(s)</span>
+      </p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-add" (click)="openControleForm()">+ Nouveau contrôle</button>
+      <button class="btn-secondary" (click)="openNonConformiteForm()">⚠️ Non-conformité</button>
+    </div>
+  </div>
+
+  <div *ngIf="successMessage" class="alert-success">✅ {{ successMessage }}</div>
+
+  <!-- Onglets -->
+  <div class="tabs">
+    <button [class.active]="activeTab === 'controles'" (click)="activeTab = 'controles'">Contrôles qualité</button>
+    <button [class.active]="activeTab === 'nonconformites'" (click)="activeTab = 'nonconformites'">Non-conformités</button>
+    <button [class.active]="activeTab === 'indicateurs'" (click)="activeTab = 'indicateurs'">Indicateurs</button>
+  </div>
+
+  <!-- Formulaire Contrôle -->
+  <div class="form-card" *ngIf="showControleForm">
+    <h3>{{ editControleMode ? 'Modifier' : 'Nouveau' }} contrôle qualité</h3>
+    <form (ngSubmit)="saveControle()">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Référence</label>
+          <input type="text" [(ngModel)]="currentControle.reference" name="ref_controle" readonly class="readonly">
+        </div>
+        <div class="form-group">
+          <label>Titre *</label>
+          <input type="text" [(ngModel)]="currentControle.titre" name="titre" required>
+        </div>
+        <div class="form-group">
+          <label>Type *</label>
+          <select [(ngModel)]="currentControle.type" name="type" required>
+            <option value="reception">Réception</option>
+            <option value="production">Production</option>
+            <option value="livraison">Livraison</option>
+            <option value="periodique">Périodique</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Catégorie *</label>
+          <select [(ngModel)]="currentControle.categorie" name="categorie" required>
+            <option value="matiere_premiere">Matière première</option>
+            <option value="produit_fini">Produit fini</option>
+            <option value="emballage">Emballage</option>
+            <option value="process">Process</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Article</label>
+          <select [(ngModel)]="currentControle.article_id" name="article_id">
+            <option [ngValue]="null">Sélectionner</option>
+            <option *ngFor="let a of articles" [ngValue]="a.id">{{ a.nom }} ({{ a.reference }})</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Lot / Numéro de série</label>
+          <input type="text" [(ngModel)]="currentControle.lot" name="lot">
+        </div>
+        <div class="form-group">
+          <label>Date prévue *</label>
+          <input type="datetime-local" [(ngModel)]="currentControle.date_prevue" name="date_prevue" required>
+        </div>
+        <div class="form-group">
+          <label>Date réalisée</label>
+          <input type="datetime-local" [(ngModel)]="currentControle.date_realisee" name="date_realisee">
+        </div>
+        <div class="form-group">
+          <label>Résultat</label>
+          <select [(ngModel)]="currentControle.resultat" name="resultat">
+            <option value="en_attente">En attente</option>
+            <option value="conforme">Conforme</option>
+            <option value="non_conforme">Non conforme</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Note (%)</label>
+          <input type="number" [(ngModel)]="currentControle.note" name="note" min="0" max="100">
+        </div>
+        <div class="form-group">
+          <label>Responsable</label>
+          <select [(ngModel)]="currentControle.responsable_id" name="responsable_id">
+            <option [ngValue]="null">Sélectionner</option>
+            <option *ngFor="let r of responsables" [ngValue]="r.id">{{ r.nom }} {{ r.prenom }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Statut</label>
+          <select [(ngModel)]="currentControle.statut" name="statut">
+            <option value="planifie">Planifié</option>
+            <option value="en_cours">En cours</option>
+            <option value="termine">Terminé</option>
+            <option value="annule">Annulé</option>
+          </select>
+        </div>
+        <div class="form-group full-width">
+          <label>Commentaire</label>
+          <textarea [(ngModel)]="currentControle.commentaire" name="commentaire" rows="3"></textarea>
+        </div>
+      </div>
+
+      <!-- Points de contrôle -->
+      <div class="controles-section">
+        <h4>Points de contrôle</h4>
+        <div *ngFor="let ctrl of currentControle.controles; let i = index" class="controle-item">
+          <div class="controle-header">
+            <strong>Point {{ i + 1 }}</strong>
+            <button type="button" class="btn-remove-small" (click)="removeControleItem(i)">✕</button>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nom du contrôle</label>
+              <input type="text" [(ngModel)]="ctrl.nom" [name]="'ctrl_nom_' + i" required>
+            </div>
+            <div class="form-group">
+              <label>Valeur attendue</label>
+              <input type="text" [(ngModel)]="ctrl.valeur_attendue" [name]="'ctrl_attendu_' + i">
+            </div>
+            <div class="form-group">
+              <label>Valeur obtenue</label>
+              <input type="text" [(ngModel)]="ctrl.valeur_obtenue" [name]="'ctrl_obtenu_' + i">
+            </div>
+            <div class="form-group">
+              <label>
+                <input type="checkbox" [(ngModel)]="ctrl.conforme" [name]="'ctrl_conforme_' + i">
+                Conforme
+              </label>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn-add-small" (click)="addControleItem()">+ Ajouter un point de contrôle</button>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" (click)="closeControleForm()">Annuler</button>
+        <button type="submit" class="btn-save">💾 Enregistrer</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Formulaire Non-conformité -->
+  <div class="form-card" *ngIf="showNonConformiteForm">
+    <h3>{{ editNonConformiteMode ? 'Modifier' : 'Nouvelle' }} non-conformité</h3>
+    <form (ngSubmit)="saveNonConformite()">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Référence</label>
+          <input type="text" [(ngModel)]="currentNonConformite.reference" name="ref_nc" readonly class="readonly">
+        </div>
+        <div class="form-group">
+          <label>Titre *</label>
+          <input type="text" [(ngModel)]="currentNonConformite.titre" name="titre_nc" required>
+        </div>
+        <div class="form-group full-width">
+          <label>Description *</label>
+          <textarea [(ngModel)]="currentNonConformite.description" name="description_nc" rows="3" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select [(ngModel)]="currentNonConformite.type" name="type_nc">
+            <option value="mineure">Mineure</option>
+            <option value="majeure">Majeure</option>
+            <option value="critique">Critique</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Origine</label>
+          <select [(ngModel)]="currentNonConformite.origine" name="origine">
+            <option value="interne">Interne</option>
+            <option value="client">Client</option>
+            <option value="fournisseur">Fournisseur</option>
+            <option value="organisme">Organisme de contrôle</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Article</label>
+          <select [(ngModel)]="currentNonConformite.article_id" name="article_id_nc">
+            <option [ngValue]="null">Sélectionner</option>
+            <option *ngFor="let a of articles" [ngValue]="a.id">{{ a.nom }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Lot</label>
+          <input type="text" [(ngModel)]="currentNonConformite.lot" name="lot_nc">
+        </div>
+        <div class="form-group">
+          <label>Quantité concernée</label>
+          <input type="number" [(ngModel)]="currentNonConformite.quantite" name="quantite_nc" min="0">
+        </div>
+        <div class="form-group">
+          <label>Date de détection *</label>
+          <input type="datetime-local" [(ngModel)]="currentNonConformite.date_detection" name="date_detection" required>
+        </div>
+        <div class="form-group">
+          <label>Date de résolution</label>
+          <input type="datetime-local" [(ngModel)]="currentNonConformite.date_resolution" name="date_resolution">
+        </div>
+        <div class="form-group full-width">
+          <label>Action corrective</label>
+          <textarea [(ngModel)]="currentNonConformite.action_corrective" name="action_corrective" rows="2"></textarea>
+        </div>
+        <div class="form-group full-width">
+          <label>Action préventive</label>
+          <textarea [(ngModel)]="currentNonConformite.action_preventive" name="action_preventive" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Responsable</label>
+          <input type="text" [(ngModel)]="currentNonConformite.responsable" name="responsable_nc">
+        </div>
+        <div class="form-group">
+          <label>Statut</label>
+          <select [(ngModel)]="currentNonConformite.statut" name="statut_nc">
+            <option value="ouvert">Ouvert</option>
+            <option value="en_cours">En cours</option>
+            <option value="resolu">Résolu</option>
+            <option value="ferme">Fermé</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" (click)="closeNonConformiteForm()">Annuler</button>
+        <button type="submit" class="btn-save">💾 Enregistrer</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Liste des contrôles -->
+  <div *ngIf="activeTab === 'controles'" class="controles-list">
+    <div class="filters-bar" *ngIf="controles.length > 0">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input [(ngModel)]="searchTerm" (ngModelChange)="filterControles()" placeholder="Rechercher...">
+      </div>
+      <select [(ngModel)]="typeFilter" (ngModelChange)="filterControles()" class="filter-select">
+        <option value="">Tous types</option>
+        <option value="reception">Réception</option>
+        <option value="production">Production</option>
+        <option value="livraison">Livraison</option>
+        <option value="periodique">Périodique</option>
+      </select>
+      <select [(ngModel)]="resultatFilter" (ngModelChange)="filterControles()" class="filter-select">
+        <option value="">Tous résultats</option>
+        <option value="conforme">Conforme</option>
+        <option value="non_conforme">Non conforme</option>
+        <option value="en_attente">En attente</option>
+      </select>
+    </div>
+    <div class="controles-grid" *ngIf="filteredControles.length > 0; else emptyControles">
+      <div class="controle-card" *ngFor="let c of filteredControles" [class.non-conforme]="c.resultat === 'non_conforme'">
+        <div class="controle-header">
+          <span class="controle-ref">{{ c.reference }}</span>
+          <span class="controle-badge" [class]="c.resultat">{{ getResultatLabel(c.resultat) }}</span>
+        </div>
+        <h3 class="controle-titre">{{ c.titre }}</h3>
+        <div class="controle-info">
+          <p><span class="label">📅 Date:</span> {{ c.date_prevue | date:'dd/MM/yyyy' }}</p>
+          <p><span class="label">📦 Type:</span> {{ getTypeLabel(c.type) }}</p>
+          <p><span class="label">📊 Note:</span> {{ c.note || '-' }}%</p>
+          <p><span class="label">✅ Conformité:</span> {{ getConformiteRatio(c) }}%</p>
+        </div>
+        <div class="controle-footer">
+          <button class="btn-icon" (click)="viewControleDetails(c)">👁️</button>
+          <button class="btn-icon" (click)="editControle(c)">✏️</button>
+          <button class="btn-icon delete" (click)="confirmDeleteControle(c)">🗑️</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Liste des non-conformités -->
+  <div *ngIf="activeTab === 'nonconformites'" class="nonconformites-list">
+    <div class="filters-bar" *ngIf="nonconformites.length > 0">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input [(ngModel)]="ncSearchTerm" (ngModelChange)="filterNonConformites()" placeholder="Rechercher...">
+      </div>
+      <select [(ngModel)]="ncTypeFilter" (ngModelChange)="filterNonConformites()" class="filter-select">
+        <option value="">Tous types</option>
+        <option value="mineure">Mineure</option>
+        <option value="majeure">Majeure</option>
+        <option value="critique">Critique</option>
+      </select>
+      <select [(ngModel)]="ncStatutFilter" (ngModelChange)="filterNonConformites()" class="filter-select">
+        <option value="">Tous statuts</option>
+        <option value="ouvert">Ouvert</option>
+        <option value="en_cours">En cours</option>
+        <option value="resolu">Résolu</option>
+        <option value="ferme">Fermé</option>
+      </select>
+    </div>
+    <div class="nonconformites-grid" *ngIf="filteredNonConformites.length > 0; else emptyNC">
+      <div class="nc-card" *ngFor="let nc of filteredNonConformites" [class]="nc.type">
+        <div class="nc-header">
+          <span class="nc-ref">{{ nc.reference }}</span>
+          <span class="nc-badge" [class]="nc.type">{{ getTypeNCLabel(nc.type) }}</span>
+          <span class="nc-statut" [class]="nc.statut">{{ getStatutNCLabel(nc.statut) }}</span>
+        </div>
+        <h3 class="nc-titre">{{ nc.titre }}</h3>
+        <p class="nc-description">{{ nc.description | slice:0:100 }}{{ nc.description.length > 100 ? '...' : '' }}</p>
+        <div class="nc-info">
+          <p><span class="label">📅 Détection:</span> {{ nc.date_detection | date:'dd/MM/yyyy' }}</p>
+          <p><span class="label">📍 Origine:</span> {{ getOrigineLabel(nc.origine) }}</p>
+          <p *ngIf="nc.article_nom"><span class="label">📦 Article:</span> {{ nc.article_nom }}</p>
+        </div>
+        <div class="nc-footer">
+          <button class="btn-icon" (click)="viewNCDetails(nc)">👁️</button>
+          <button class="btn-icon" (click)="editNonConformite(nc)">✏️</button>
+          <button class="btn-icon delete" (click)="confirmDeleteNC(nc)">🗑️</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Indicateurs -->
+  <div *ngIf="activeTab === 'indicateurs'" class="indicateurs">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-info">
+          <h3>Taux de conformité</h3>
+          <p class="stat-value">{{ getTauxConformite() }}%</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⚠️</div>
+        <div class="stat-info">
+          <h3>Non-conformités ouvertes</h3>
+          <p class="stat-value">{{ getNCOuvertes() }}</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-info">
+          <h3>Contrôles ce mois</h3>
+          <p class="stat-value">{{ getControlesMois() }}</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⏱️</div>
+        <div class="stat-info">
+          <h3>Délai moyen résolution</h3>
+          <p class="stat-value">{{ getDelaiMoyenResolution() }} jours</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <h3>Répartition des non-conformités</h3>
+      <div class="chart-bars">
+        <div class="chart-bar">
+          <span class="chart-label">Mineures</span>
+          <div class="bar-container">
+            <div class="bar" [style.width.%]="getNCPourcentage('mineure')" style="background: #F59E0B"></div>
+          </div>
+          <span class="chart-value">{{ getNCComptage('mineure') }}</span>
+        </div>
+        <div class="chart-bar">
+          <span class="chart-label">Majeures</span>
+          <div class="bar-container">
+            <div class="bar" [style.width.%]="getNCPourcentage('majeure')" style="background: #EC4899"></div>
+          </div>
+          <span class="chart-value">{{ getNCComptage('majeure') }}</span>
+        </div>
+        <div class="chart-bar">
+          <span class="chart-label">Critiques</span>
+          <div class="bar-container">
+            <div class="bar" [style.width.%]="getNCPourcentage('critique')" style="background: #EF4444"></div>
+          </div>
+          <span class="chart-value">{{ getNCComptage('critique') }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #emptyControles>
+    <div class="empty-state">
+      <div class="empty-icon">🔬</div>
+      <h2>Aucun contrôle qualité</h2>
+      <p>Créez votre premier contrôle qualité</p>
+      <button class="btn-primary" (click)="openControleForm()">+ Nouveau contrôle</button>
+    </div>
+  </ng-template>
+
+  <ng-template #emptyNC>
+    <div class="empty-state">
+      <div class="empty-icon">⚠️</div>
+      <h2>Aucune non-conformité</h2>
+      <p>Enregistrez les non-conformités détectées</p>
+      <button class="btn-primary" (click)="openNonConformiteForm()">+ Nouvelle non-conformité</button>
+    </div>
+  </ng-template>
+
+  <!-- Modal Détails Contrôle -->
+  <div class="modal" *ngIf="showControleDetailsModal">
+    <div class="modal-content large">
+      <div class="modal-header">
+        <h3>{{ selectedControle?.reference }} - {{ selectedControle?.titre }}</h3>
+        <button class="btn-close" (click)="showControleDetailsModal = false">✕</button>
+      </div>
+      <div class="modal-body" *ngIf="selectedControle">
+        <div class="details-grid">
+          <div class="detail-section">
+            <h4>Informations</h4>
+            <p><strong>Type:</strong> {{ getTypeLabel(selectedControle.type) }}</p>
+            <p><strong>Catégorie:</strong> {{ getCategorieLabel(selectedControle.categorie) }}</p>
+            <p><strong>Résultat:</strong> {{ getResultatLabel(selectedControle.resultat) }}</p>
+            <p><strong>Note:</strong> {{ selectedControle.note || '-' }}%</p>
+          </div>
+          <div class="detail-section">
+            <h4>Dates</h4>
+            <p><strong>Prévue:</strong> {{ selectedControle.date_prevue | date:'dd/MM/yyyy HH:mm' }}</p>
+            <p><strong>Réalisée:</strong> {{ selectedControle.date_realisee | date:'dd/MM/yyyy HH:mm' || '-' }}</p>
+          </div>
+          <div class="detail-section full-width">
+            <h4>Points de contrôle</h4>
+            <table class="controle-table">
+              <thead>
+                <tr><th>Contrôle</th><th>Attendu</th><th>Obtenu</th><th>Conforme</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let c of selectedControle.controles">
+                  <td>{{ c.nom }}</td>
+                  <td>{{ c.valeur_attendue }}</td>
+                  <td>{{ c.valeur_obtenue || '-' }}</td>
+                  <td>{{ c.conforme ? '✅' : '❌' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Détails Non-conformité -->
+  <div class="modal" *ngIf="showNCDetailsModal">
+    <div class="modal-content large">
+      <div class="modal-header">
+        <h3>{{ selectedNC?.reference }} - {{ selectedNC?.titre }}</h3>
+        <button class="btn-close" (click)="showNCDetailsModal = false">✕</button>
+      </div>
+      <div class="modal-body" *ngIf="selectedNC">
+        <div class="details-grid">
+          <div class="detail-section">
+            <h4>Informations</h4>
+            <p><strong>Type:</strong> {{ getTypeNCLabel(selectedNC.type) }}</p>
+            <p><strong>Origine:</strong> {{ getOrigineLabel(selectedNC.origine) }}</p>
+            <p><strong>Statut:</strong> {{ getStatutNCLabel(selectedNC.statut) }}</p>
+          </div>
+          <div class="detail-section">
+            <h4>Dates</h4>
+            <p><strong>Détection:</strong> {{ selectedNC.date_detection | date:'dd/MM/yyyy HH:mm' }}</p>
+            <p><strong>Résolution:</strong> {{ selectedNC.date_resolution | date:'dd/MM/yyyy HH:mm' || '-' }}</p>
+          </div>
+          <div class="detail-section full-width">
+            <h4>Description</h4>
+            <p>{{ selectedNC.description }}</p>
+          </div>
+          <div class="detail-section full-width" *ngIf="selectedNC.action_corrective">
+            <h4>Action corrective</h4>
+            <p>{{ selectedNC.action_corrective }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals suppression -->
+  <div class="modal" *ngIf="showDeleteControleModal">
+    <div class="modal-content">
+      <h3>Confirmer la suppression</h3>
+      <p>Supprimer le contrôle <strong>{{ controleToDelete?.reference }}</strong> ?</p>
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="showDeleteControleModal = false">Annuler</button>
+        <button class="btn-delete" (click)="deleteControle()">🗑️ Supprimer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" *ngIf="showDeleteNCModal">
+    <div class="modal-content">
+      <h3>Confirmer la suppression</h3>
+      <p>Supprimer la non-conformité <strong>{{ ncToDelete?.reference }}</strong> ?</p>
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="showDeleteNCModal = false">Annuler</button>
+        <button class="btn-delete" (click)="deleteNonConformite()">🗑️ Supprimer</button>
+      </div>
+    </div>
+  </div>
+</div>

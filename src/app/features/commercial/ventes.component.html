@@ -1,0 +1,577 @@
+<div class="ventes-container">
+  <!-- En-tête avec stats -->
+  <div class="header">
+    <div>
+      <h1>🛒 Ventes & Encaissements</h1>
+      <p class="subtitle">{{ ventes.length }} vente(s) • {{ getVentesEnAttente() }} en attente • {{ getMontantTotal() | number }} FCFA CA</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-excel" (click)="exportToExcel()" *ngIf="ventes.length > 0">📊 Excel</button>
+      <button class="btn-pdf" (click)="exportToPDF()" *ngIf="ventes.length > 0">📄 PDF</button>
+      <button class="btn-add" (click)="openForm()">+ Nouvelle vente</button>
+    </div>
+  </div>
+
+  <!-- Message de succès -->
+  <div *ngIf="successMessage" class="alert-success">
+    <span class="alert-icon">✅</span>
+    {{ successMessage }}
+  </div>
+
+  <!-- KPIs améliorés -->
+  <div class="kpi-grid" *ngIf="ventes.length > 0">
+    <div class="kpi-card total">
+      <div class="kpi-icon">🛒</div>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ ventes.length }}</span>
+        <span class="kpi-label">Total ventes</span>
+      </div>
+    </div>
+    <div class="kpi-card ca">
+      <div class="kpi-icon">💰</div>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ getMontantTotal() | number }} <small>FCFA</small></span>
+        <span class="kpi-label">Chiffre d'affaires</span>
+      </div>
+    </div>
+    <div class="kpi-card encaisse">
+      <div class="kpi-icon">✅</div>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ getMontantEncaisse() | number }} <small>FCFA</small></span>
+        <span class="kpi-label">Montant encaissé</span>
+      </div>
+    </div>
+    <div class="kpi-card recouvrement">
+      <div class="kpi-icon">📊</div>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ getTauxRecouvrement() }}%</span>
+        <span class="kpi-label">Taux recouvrement</span>
+      </div>
+    </div>
+    <div class="kpi-card mois">
+      <div class="kpi-icon">📅</div>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ getVentesMois() }}</span>
+        <span class="kpi-label">Ventes ce mois</span>
+      </div>
+    </div>
+    <div class="kpi-card panier">
+      <div class="kpi-icon">🛍️</div>
+      <div class="kpi-content">
+        <span class="kpi-value">{{ getPanierMoyen() | number }} <small>FCFA</small></span>
+        <span class="kpi-label">Panier moyen</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulaire avec onglets -->
+  <div class="modal-overlay" *ngIf="showForm">
+    <div class="modal-container large">
+      <div class="modal-header">
+        <h3>{{ editMode ? '✏️ Modifier' : '➕ Nouvelle' }} vente</h3>
+        <button class="modal-close" (click)="cancelForm()">✕</button>
+      </div>
+      <div class="modal-body">
+        <form (ngSubmit)="saveVente()">
+          <div class="tabs">
+            <button type="button" [class.active]="activeTab === 'info'" (click)="activeTab = 'info'">📋 Informations</button>
+            <button type="button" [class.active]="activeTab === 'articles'" (click)="activeTab = 'articles'">📦 Articles</button>
+            <button type="button" [class.active]="activeTab === 'paiement'" (click)="activeTab = 'paiement'">💳 Paiement</button>
+          </div>
+
+          <!-- Onglet Informations -->
+          <div *ngIf="activeTab === 'info'" class="tab-content">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Référence *</label>
+                <input type="text" [(ngModel)]="currentVente.reference" readonly class="readonly">
+              </div>
+              <div class="form-group">
+                <label>Statut</label>
+                <select [(ngModel)]="currentVente.statut" class="statut-select" [class]="currentVente.statut">
+                  <option value="en_attente">⏳ En attente de paiement</option>
+                  <option value="payee">✅ Payée</option>
+                  <option value="annulee">❌ Annulée</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>📅 Date de vente</label>
+                <input type="date" [(ngModel)]="currentVente.date_vente">
+              </div>
+              <div class="form-group" *ngIf="currentVente.statut === 'payee'">
+                <label>📅 Date de paiement</label>
+                <input type="date" [(ngModel)]="currentVente.date_paiement">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>💰 Montant HT</label>
+                <input type="number" [(ngModel)]="currentVente.montant_ht" (input)="calculerTotal()" step="1000" class="montant-input">
+              </div>
+              <div class="form-group">
+                <label>TVA (%)</label>
+                <input type="number" [(ngModel)]="currentVente.tva" (input)="calculerTotal()" step="1">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>🎁 Remise (%)</label>
+                <input type="number" [(ngModel)]="currentVente.remise" (input)="calculerTotal()" step="1" min="0" max="100">
+              </div>
+              <div class="form-group highlight">
+                <label>💰 Total TTC</label>
+                <input type="text" [value]="(currentVente.montant_ttc || 0) | number:'1.0-0'" readonly class="readonly highlight-input">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>📝 Notes</label>
+              <textarea [(ngModel)]="currentVente.notes" rows="3" placeholder="Informations complémentaires..."></textarea>
+            </div>
+          </div>
+
+          <!-- Onglet Articles -->
+          <div *ngIf="activeTab === 'articles'" class="tab-content">
+            <div class="articles-header">
+              <h4>📦 Articles vendus</h4>
+              <button type="button" class="btn-add-article" (click)="addArticle()">+ Ajouter article</button>
+            </div>
+            <div class="articles-table" *ngIf="currentVente.articles && currentVente.articles.length > 0; else noArticles">
+              <div class="articles-header-row">
+                <div class="col-designation">Désignation</div>
+                <div class="col-quantite">Qté</div>
+                <div class="col-prix">Prix unit.</div>
+                <div class="col-montant">Montant</div>
+                <div class="col-actions"></div>
+              </div>
+              <div class="articles-row" *ngFor="let article of currentVente.articles; let i = index">
+                <div class="col-designation">
+                  <input type="text" [(ngModel)]="article.designation" (input)="updateArticleMontant(article)" placeholder="Désignation">
+                </div>
+                <div class="col-quantite">
+                  <input type="number" [(ngModel)]="article.quantite" (input)="updateArticleMontant(article)" step="1" min="1">
+                </div>
+                <div class="col-prix">
+                  <input type="number" [(ngModel)]="article.prix_unitaire" (input)="updateArticleMontant(article)" step="1000">
+                </div>
+                <div class="col-montant">
+                  <span class="montant-article">{{ article.montant | number }} FCFA</span>
+                </div>
+                <div class="col-actions">
+                  <button type="button" class="remove-article" (click)="removeArticle(i)">🗑️</button>
+                </div>
+              </div>
+              <div class="articles-total">
+                <div class="total-row">
+                  <span>Sous-total HT:</span>
+                  <strong>{{ getSousTotalHT() | number }} FCFA</strong>
+                </div>
+                <div class="total-row">
+                  <span>TVA ({{ currentVente.tva || 0 }}%):</span>
+                  <strong>{{ getTvaMontant() | number }} FCFA</strong>
+                </div>
+                <div class="total-row" *ngIf="currentVente.remise">
+                  <span>Remise ({{ currentVente.remise }}%):</span>
+                  <strong>-{{ getRemiseMontant() | number }} FCFA</strong>
+                </div>
+                <div class="total-row grand-total">
+                  <span>Total TTC:</span>
+                  <strong>{{ getTotalTTCFromArticles() | number }} FCFA</strong>
+                </div>
+              </div>
+            </div>
+            <ng-template #noArticles>
+              <div class="no-articles">
+                <p>Aucun article ajouté</p>
+                <button type="button" class="btn-add-article" (click)="addArticle()">+ Ajouter un article</button>
+              </div>
+            </ng-template>
+          </div>
+
+          <!-- Onglet Paiement -->
+          <div *ngIf="activeTab === 'paiement'" class="tab-content">
+            <div class="form-group">
+              <label>Client *</label>
+              <select [(ngModel)]="currentVente.client_id" (change)="onClientChange()" class="client-select">
+                <option [value]="null">Sélectionner un client</option>
+                <option *ngFor="let c of clients" [value]="c.id">
+                  {{ c.nom }} {{ c.prenom }} - {{ c.email || c.telephone }}
+                </option>
+              </select>
+              <button type="button" class="btn-add-client" (click)="openClientForm()">+ Nouveau client</button>
+            </div>
+            <div class="client-info" *ngIf="currentVente.client_nom">
+              <div class="info-card">
+                <div class="info-card-header">
+                  <span class="info-icon">👤</span>
+                  <strong>{{ currentVente.client_nom }}</strong>
+                </div>
+                <div class="info-card-details">
+                  <span *ngIf="currentVente.client_contact">📞 {{ currentVente.client_contact }}</span>
+                  <span *ngIf="currentVente.client_email">✉️ {{ currentVente.client_email }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>💳 Mode de paiement</label>
+                <select [(ngModel)]="currentVente.mode_paiement">
+                  <option value="especes">💵 Espèces</option>
+                  <option value="carte">💳 Carte bancaire</option>
+                  <option value="cheque">📝 Chèque</option>
+                  <option value="virement">🏦 Virement bancaire</option>
+                  <option value="mobile_money">📱 Mobile Money</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>🔖 Référence paiement</label>
+                <input type="text" [(ngModel)]="currentVente.reference_paiement" placeholder="Numéro chèque, transaction...">
+              </div>
+            </div>
+
+            <div class="payment-summary" *ngIf="currentVente.montant_ttc">
+              <div class="summary-card">
+                <div class="summary-title">Récapitulatif du paiement</div>
+                <div class="summary-row">
+                  <span>Montant total dû:</span>
+                  <strong>{{ currentVente.montant_ttc | number }} FCFA</strong>
+                </div>
+                <div class="summary-row" *ngIf="currentVente.statut === 'payee'">
+                  <span>✅ Payé le:</span>
+                  <span>{{ currentVente.date_paiement | date:'dd/MM/yyyy' }}</span>
+                </div>
+                <div class="summary-row" *ngIf="currentVente.reference_paiement">
+                  <span>Référence:</span>
+                  <span>{{ currentVente.reference_paiement }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" (click)="cancelForm()">Annuler</button>
+            <button type="submit" class="btn-primary">💾 Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="filters-section" *ngIf="ventes.length > 0">
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input [(ngModel)]="searchTerm" (ngModelChange)="filterVentes()" placeholder="Rechercher par référence, client..." class="search-input">
+    </div>
+    <div class="filter-group">
+      <select [(ngModel)]="statutFilter" (ngModelChange)="filterVentes()" class="filter-select">
+        <option value="">📊 Tous statuts</option>
+        <option value="en_attente">⏳ En attente</option>
+        <option value="payee">✅ Payée</option>
+        <option value="annulee">❌ Annulée</option>
+      </select>
+      <select [(ngModel)]="modeFilter" (ngModelChange)="filterVentes()" class="filter-select">
+        <option value="">💳 Tous modes</option>
+        <option value="especes">💵 Espèces</option>
+        <option value="carte">💳 Carte</option>
+        <option value="cheque">📝 Chèque</option>
+        <option value="virement">🏦 Virement</option>
+        <option value="mobile_money">📱 Mobile Money</option>
+      </select>
+      <select [(ngModel)]="periodeFilter" (ngModelChange)="filterVentes()" class="filter-select">
+        <option value="">📅 Toutes périodes</option>
+        <option value="today">Aujourd'hui</option>
+        <option value="week">Cette semaine</option>
+        <option value="month">Ce mois</option>
+        <option value="last_month">Mois dernier</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Liste des ventes -->
+  <div class="ventes-section" *ngIf="ventes.length > 0; else emptyState">
+    <div class="section-header">
+      <h2>📋 Liste des ventes</h2>
+      <div class="header-stats">
+        <span class="stat-badge total">{{ filteredVentes.length }} / {{ ventes.length }} affiché(s)</span>
+        <span class="stat-badge montant">{{ getMontantFiltre() | number }} FCFA</span>
+      </div>
+    </div>
+
+    <div class="ventes-grid">
+      <div class="vente-card" *ngFor="let v of filteredVentes" [class]="v.statut">
+        <div class="card-header">
+          <div class="header-left">
+            <div class="vente-icon">🛒</div>
+            <div class="vente-info">
+              <div class="vente-ref">{{ v.reference }}</div>
+              <div class="vente-client">{{ v.client_nom || 'Client non spécifié' }}</div>
+              <div class="vente-date">📅 {{ v.date_vente | date:'dd/MM/yyyy' }}</div>
+            </div>
+          </div>
+          <div class="header-right">
+            <div class="vente-montant">{{ v.montant_ttc | number }} FCFA</div>
+            <span class="statut-badge" [class]="v.statut">{{ getStatutLabel(v.statut) }}</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="info-row">
+            <span class="info-label">💳 Paiement:</span>
+            <span class="info-value">{{ getModePaiementLabel(v.mode_paiement) }}</span>
+          </div>
+          <div class="info-row" *ngIf="v.date_paiement">
+            <span class="info-label">✅ Payé le:</span>
+            <span class="info-value">{{ v.date_paiement | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="info-row" *ngIf="v.articles && v.articles.length">
+            <span class="info-label">📦 Articles:</span>
+            <span class="info-value">{{ v.articles.length }} article(s)</span>
+          </div>
+          <div class="info-row" *ngIf="v.reference_paiement">
+            <span class="info-label">🔖 Réf. paiement:</span>
+            <span class="info-value reference-value">{{ v.reference_paiement }}</span>
+          </div>
+          <div class="progress-bar" *ngIf="v.statut === 'en_attente'">
+            <div class="progress-fill" style="width: 50%"></div>
+            <span class="progress-text">En attente de paiement</span>
+          </div>
+          <div class="progress-bar success" *ngIf="v.statut === 'payee'">
+            <div class="progress-fill success" style="width: 100%"></div>
+            <span class="progress-text">Paiement complété</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="footer-actions">
+            <button class="action-icon" (click)="viewDetails(v)" title="Voir détails">👁️</button>
+            <button class="action-icon" (click)="editVente(v)" title="Modifier">✏️</button>
+            <button class="action-icon" (click)="duplicateVente(v)" title="Dupliquer">📋</button>
+            <button class="action-icon print" (click)="printTicket(v)" title="Imprimer ticket">🖨️</button>
+            <button class="action-icon" (click)="marquerPayee(v)" *ngIf="v.statut === 'en_attente'" title="Marquer payée">✅</button>
+            <button class="action-icon delete" (click)="confirmDelete(v)" title="Supprimer">🗑️</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- État vide -->
+  <ng-template #emptyState>
+    <div class="empty-state">
+      <div class="empty-icon">🛒</div>
+      <h2>Aucune vente</h2>
+      <p>Enregistrez votre première vente pour commencer</p>
+      <button class="btn-primary" (click)="openForm()">+ Nouvelle vente</button>
+    </div>
+  </ng-template>
+
+  <!-- Modal Détails -->
+  <div class="modal-overlay" *ngIf="showDetailsModal && selectedVente">
+    <div class="modal-container large">
+      <div class="modal-header">
+        <h3>Détails de la vente - {{ selectedVente.reference }}</h3>
+        <button class="modal-close" (click)="showDetailsModal = false">✕</button>
+      </div>
+      <div class="modal-body" *ngIf="selectedVente">
+        <div class="details-grid">
+          <div class="detail-section">
+            <h4>📋 Informations générales</h4>
+            <p><strong>Référence:</strong> {{ selectedVente.reference }}</p>
+            <p><strong>Statut:</strong> {{ getStatutLabel(selectedVente.statut) }}</p>
+            <p><strong>Date vente:</strong> {{ selectedVente.date_vente | date:'dd/MM/yyyy' }}</p>
+            <p><strong>Date paiement:</strong> {{ selectedVente.date_paiement | date:'dd/MM/yyyy' || '-' }}</p>
+            <p><strong>Montant HT:</strong> {{ selectedVente.montant_ht | number }} FCFA</p>
+            <p><strong>TVA:</strong> {{ selectedVente.tva }}%</p>
+            <p><strong>Remise:</strong> {{ selectedVente.remise || 0 }}%</p>
+            <p><strong>Montant TTC:</strong> <strong class="highlight">{{ selectedVente.montant_ttc | number }} FCFA</strong></p>
+            <p *ngIf="selectedVente.montant_paye"><strong>Montant payé:</strong> {{ selectedVente.montant_paye | number }} FCFA</p>
+          </div>
+          <div class="detail-section">
+            <h4>👤 Client</h4>
+            <p><strong>Nom:</strong> {{ selectedVente.client_nom || '-' }}</p>
+            <p><strong>Contact:</strong> {{ selectedVente.client_contact || '-' }}</p>
+            <p><strong>Email:</strong> {{ selectedVente.client_email || '-' }}</p>
+          </div>
+          <div class="detail-section">
+            <h4>💳 Paiement</h4>
+            <p><strong>Mode:</strong> {{ getModePaiementLabel(selectedVente.mode_paiement) }}</p>
+            <p><strong>Référence:</strong> {{ selectedVente.reference_paiement || '-' }}</p>
+          </div>
+          <div class="detail-section full-width" *ngIf="selectedVente.articles && selectedVente.articles.length">
+            <h4>📦 Articles vendus</h4>
+            <table class="details-table">
+              <thead>
+                <tr>
+                  <th>Désignation</th>
+                  <th class="text-center">Quantité</th>
+                  <th class="text-right">Prix unit.</th>
+                  <th class="text-right">Montant</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let a of selectedVente.articles">
+                  <td>{{ a.designation }}</td>
+                  <td class="text-center">{{ a.quantite }}</td>
+                  <td class="text-right">{{ a.prix_unitaire | number }} FCFA</td>
+                  <td class="text-right">{{ a.montant | number }} FCFA</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="detail-section full-width" *ngIf="selectedVente.notes">
+            <h4>📝 Notes</h4>
+            <p>{{ selectedVente.notes }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ticket -->
+  <div class="modal-overlay" *ngIf="showTicketModal && ticketVente">
+    <div class="modal-container ticket">
+      <div class="modal-header">
+        <h3>🧾 Ticket de vente</h3>
+        <button class="modal-close" (click)="showTicketModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="ticket-content">
+          <div class="ticket-header">
+            <div class="ticket-title">📄 TICKET DE VENTE</div>
+            <div class="ticket-ref">{{ ticketVente.reference }}</div>
+            <div class="ticket-date">{{ ticketVente.date_vente | date:'dd/MM/yyyy HH:mm' }}</div>
+          </div>
+          <div class="ticket-client">
+            <strong>Client:</strong> {{ ticketVente.client_nom }}
+          </div>
+          <table class="ticket-table">
+            <thead>
+              <tr><th>Article</th><th>Qté</th><th>PU</th><th>Total</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let a of ticketVente.articles">
+                <td>{{ a.designation }}</td>
+                <td class="text-center">{{ a.quantite }}</td>
+                <td class="text-right">{{ a.prix_unitaire | number }}</td>
+                <td class="text-right">{{ a.montant | number }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="ticket-total">
+            <div>Total HT: {{ ticketVente.montant_ht | number }} FCFA</div>
+            <div>TVA ({{ ticketVente.tva }}%): {{ ticketVente.montant_ht * ticketVente.tva / 100 | number }} FCFA</div>
+            <div class="grand-total">Total TTC: {{ ticketVente.montant_ttc | number }} FCFA</div>
+          </div>
+          <div class="ticket-payment">
+            <div>Mode: {{ getModePaiementLabel(ticketVente.mode_paiement) }}</div>
+            <div *ngIf="ticketVente.reference_paiement">Réf: {{ ticketVente.reference_paiement }}</div>
+          </div>
+          <div class="ticket-footer">
+            Merci de votre visite !
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" (click)="showTicketModal = false">Fermer</button>
+          <button class="btn-primary" (click)="printTicketModal()">🖨️ Imprimer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Paiement -->
+  <div class="modal-overlay" *ngIf="showPaymentModal && paymentVente">
+    <div class="modal-container small">
+      <div class="modal-header">
+        <h3>💵 Enregistrer un paiement</h3>
+        <button class="modal-close" (click)="showPaymentModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="payment-info">
+          <p><strong>Facture:</strong> {{ paymentVente.reference }}</p>
+          <p><strong>Client:</strong> {{ paymentVente.client_nom }}</p>
+          <p><strong>Montant total:</strong> {{ paymentVente.montant_ttc | number }} FCFA</p>
+          <p *ngIf="paymentVente.montant_paye"><strong>Déjà payé:</strong> {{ paymentVente.montant_paye | number }} FCFA</p>
+          <p><strong>Reste à payer:</strong> <strong class="highlight">{{ (paymentVente.montant_ttc - (paymentVente.montant_paye || 0)) | number }} FCFA</strong></p>
+        </div>
+        <div class="form-group">
+          <label>Montant à encaisser *</label>
+          <input type="number" [(ngModel)]="paymentAmount" step="1000" [max]="paymentVente.montant_ttc - (paymentVente.montant_paye || 0)" class="montant-input">
+        </div>
+        <div class="form-group">
+          <label>Date de paiement</label>
+          <input type="date" [(ngModel)]="paymentDate">
+        </div>
+        <div class="form-group">
+          <label>Mode de paiement</label>
+          <select [(ngModel)]="paymentMode">
+            <option value="especes">💵 Espèces</option>
+            <option value="carte">💳 Carte</option>
+            <option value="cheque">📝 Chèque</option>
+            <option value="virement">🏦 Virement</option>
+            <option value="mobile_money">📱 Mobile Money</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Référence paiement</label>
+          <input type="text" [(ngModel)]="paymentReference" placeholder="Numéro chèque, transaction...">
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" (click)="showPaymentModal = false">Annuler</button>
+          <button class="btn-primary" (click)="savePayment()">💾 Enregistrer paiement</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Client rapide -->
+  <div class="modal-overlay" *ngIf="showClientForm">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>➕ Nouveau client</h3>
+        <button class="modal-close" (click)="showClientForm = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Nom *</label>
+          <input type="text" [(ngModel)]="newClient.nom">
+        </div>
+        <div class="form-group">
+          <label>Prénom</label>
+          <input type="text" [(ngModel)]="newClient.prenom">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Téléphone</label>
+            <input type="tel" [(ngModel)]="newClient.telephone">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" [(ngModel)]="newClient.email">
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" (click)="showClientForm = false">Annuler</button>
+          <button class="btn-primary" (click)="saveNewClient()">💾 Ajouter</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Suppression -->
+  <div class="modal-overlay" *ngIf="showDeleteModal">
+    <div class="modal-container small">
+      <div class="modal-header">
+        <h3>🗑️ Confirmer la suppression</h3>
+        <button class="modal-close" (click)="showDeleteModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Supprimer la vente <strong>{{ venteToDelete?.reference }}</strong> ?</p>
+        <div class="modal-actions">
+          <button class="btn-secondary" (click)="showDeleteModal = false">Annuler</button>
+          <button class="btn-danger" (click)="deleteVente()">🗑️ Supprimer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

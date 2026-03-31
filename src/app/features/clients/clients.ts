@@ -5,37 +5,19 @@ import { FormsModule } from '@angular/forms';
 
 interface Client {
   id?: number;
-  code: string;
-  type: 'entreprise' | 'particulier' | 'association' | 'administration';
-  civilite?: 'M' | 'Mme' | 'Mlle';
   nom: string;
   prenom?: string;
-  raison_sociale?: string;
-  forme_juridique?: string;
-  nif: string;
-  registre_commerce?: string;
-  date_creation?: string;
-  secteur_activite?: string;
-  adresse: string;
-  ville: string;
-  code_postal?: string;
-  pays: string;
-  telephone: string;
   email: string;
-  site_web?: string;
-  fax?: string;
-  contact_nom?: string;
-  contact_fonction?: string;
-  contact_telephone?: string;
-  contact_email?: string;
-  conditions_paiement?: string;
-  delai_paiement?: number;
-  devise?: string;
-  plafond_credit?: number;
-  encours?: number;
-  statut: 'actif' | 'inactif' | 'prospect';
+  telephone: string;
+  adresse?: string;
+  ville?: string;
+  code_postal?: string;
+  pays?: string;
+  secteur?: string;
+  statut?: 'actif' | 'inactif';
   notes?: string;
-  date_creation_compte: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 @Component({
@@ -46,456 +28,385 @@ interface Client {
     <div class="clients-container">
       <div class="header">
         <div>
-          <h1>Clients</h1>
-          <p class="subtitle">{{ clients.length }} client(s) • Total: {{ clientsActifs }} actifs</p>
+          <h1>👥 Clients</h1>
+          <p class="subtitle">{{ clients.length }} client(s) • {{ clientsActifs }} actif(s) • {{ villesUniques }} ville(s)</p>
         </div>
-        <button class="btn-add" (click)="showForm = !showForm">+ Nouveau client</button>
+        <div class="header-actions">
+          <button class="btn-excel" (click)="exportToExcel()" *ngIf="clients.length > 0">📊 Excel</button>
+          <button class="btn-pdf" (click)="exportToPDF()" *ngIf="clients.length > 0">📄 PDF</button>
+          <button class="btn-add" (click)="openForm()">+ Nouveau client</button>
+        </div>
       </div>
+
       <div *ngIf="successMessage" class="alert-success">✅ {{ successMessage }}</div>
-      <div class="form-card" *ngIf="showForm">
-        <h3>{{ editMode ? 'Modifier' : 'Nouveau' }} client</h3>
-        <form (ngSubmit)="saveClient()" #clientForm="ngForm">
-          <div class="tabs">
-            <button type="button" [class.active]="activeTab === 'info'" (click)="activeTab = 'info'">Informations</button>
-            <button type="button" [class.active]="activeTab === 'contact'" (click)="activeTab = 'contact'">Contact</button>
-            <button type="button" [class.active]="activeTab === 'commercial'" (click)="activeTab = 'commercial'">Commercial</button>
-          </div>
-          <div *ngIf="activeTab === 'info'" class="tab-content">
-            <div class="form-grid">
-              <div class="form-group">
-                <label>Code *</label>
-                <input type="text" [(ngModel)]="currentClient.code" name="code" required>
-              </div>
-              <div class="form-group">
-                <label>Type</label>
-                <select [(ngModel)]="currentClient.type" name="type">
-                  <option value="entreprise">Entreprise</option>
-                  <option value="particulier">Particulier</option>
-                  <option value="association">Association</option>
-                  <option value="administration">Administration</option>
-                </select>
-              </div>
-              <div class="form-group" *ngIf="currentClient.type === 'particulier'">
-                <label>Civilité</label>
-                <select [(ngModel)]="currentClient.civilite" name="civilite">
-                  <option value="M">M.</option>
-                  <option value="Mme">Mme</option>
-                  <option value="Mlle">Mlle</option>
-                </select>
-              </div>
-              <div class="form-group" *ngIf="currentClient.type !== 'particulier'">
-                <label>Raison sociale *</label>
-                <input type="text" [(ngModel)]="currentClient.raison_sociale" name="raison_sociale" required>
-              </div>
-              <div class="form-group" *ngIf="currentClient.type === 'particulier'">
-                <label>Nom *</label>
-                <input type="text" [(ngModel)]="currentClient.nom" name="nom" required>
-              </div>
-              <div class="form-group" *ngIf="currentClient.type === 'particulier'">
-                <label>Prénom</label>
-                <input type="text" [(ngModel)]="currentClient.prenom" name="prenom">
-              </div>
-              <div class="form-group" *ngIf="currentClient.type !== 'particulier'">
-                <label>Forme juridique</label>
-                <input type="text" [(ngModel)]="currentClient.forme_juridique" name="forme_juridique">
-              </div>
-              <div class="form-group">
-                <label>NIF *</label>
-                <input type="text" [(ngModel)]="currentClient.nif" name="nif" required>
-              </div>
-              <div class="form-group">
-                <label>Registre de commerce</label>
-                <input type="text" [(ngModel)]="currentClient.registre_commerce" name="registre_commerce">
-              </div>
-              <div class="form-group">
-                <label>Date création</label>
-                <input type="date" [(ngModel)]="currentClient.date_creation" name="date_creation">
-              </div>
-              <div class="form-group">
-                <label>Secteur d'activité</label>
-                <input type="text" [(ngModel)]="currentClient.secteur_activite" name="secteur_activite">
-              </div>
-            </div>
-          </div>
-          <div *ngIf="activeTab === 'contact'" class="tab-content">
-            <div class="form-grid">
-              <div class="form-group full-width">
-                <label>Adresse *</label>
-                <textarea [(ngModel)]="currentClient.adresse" name="adresse" rows="2" required></textarea>
-              </div>
-              <div class="form-group">
-                <label>Ville *</label>
-                <input type="text" [(ngModel)]="currentClient.ville" name="ville" required>
-              </div>
-              <div class="form-group">
-                <label>Code postal</label>
-                <input type="text" [(ngModel)]="currentClient.code_postal" name="code_postal">
-              </div>
-              <div class="form-group">
-                <label>Pays *</label>
-                <input type="text" [(ngModel)]="currentClient.pays" name="pays" value="Mali" required>
-              </div>
-              <div class="form-group">
-                <label>Téléphone *</label>
-                <input type="tel" [(ngModel)]="currentClient.telephone" name="telephone" required>
-              </div>
-              <div class="form-group">
-                <label>Email *</label>
-                <input type="email" [(ngModel)]="currentClient.email" name="email" required>
-              </div>
-              <div class="form-group">
-                <label>Site web</label>
-                <input type="url" [(ngModel)]="currentClient.site_web" name="site_web">
-              </div>
-              <div class="form-group">
-                <label>Fax</label>
-                <input type="text" [(ngModel)]="currentClient.fax" name="fax">
-              </div>
-            </div>
-          </div>
-          <div *ngIf="activeTab === 'commercial'" class="tab-content">
-            <div class="form-grid">
-              <div class="form-group">
-                <label>Personne de contact</label>
-                <input type="text" [(ngModel)]="currentClient.contact_nom" name="contact_nom">
-              </div>
-              <div class="form-group">
-                <label>Fonction</label>
-                <input type="text" [(ngModel)]="currentClient.contact_fonction" name="contact_fonction">
-              </div>
-              <div class="form-group">
-                <label>Téléphone contact</label>
-                <input type="tel" [(ngModel)]="currentClient.contact_telephone" name="contact_telephone">
-              </div>
-              <div class="form-group">
-                <label>Email contact</label>
-                <input type="email" [(ngModel)]="currentClient.contact_email" name="contact_email">
-              </div>
-              <div class="form-group">
-                <label>Conditions de paiement</label>
-                <input type="text" [(ngModel)]="currentClient.conditions_paiement" name="conditions_paiement" placeholder="Ex: 30 jours fin de mois">
-              </div>
-              <div class="form-group">
-                <label>Délai de paiement (jours)</label>
-                <input type="number" [(ngModel)]="currentClient.delai_paiement" name="delai_paiement" min="0">
-              </div>
-              <div class="form-group">
-                <label>Devise</label>
-                <input type="text" [(ngModel)]="currentClient.devise" name="devise" value="FCFA">
-              </div>
-              <div class="form-group">
-                <label>Plafond de crédit (FCFA)</label>
-                <input type="number" [(ngModel)]="currentClient.plafond_credit" name="plafond_credit" min="0">
-              </div>
-              <div class="form-group">
-                <label>Encours actuel (FCFA)</label>
-                <input type="number" [(ngModel)]="currentClient.encours" name="encours" min="0" readonly>
-              </div>
-              <div class="form-group">
-                <label>Statut</label>
-                <select [(ngModel)]="currentClient.statut" name="statut">
-                  <option value="actif">Actif</option>
-                  <option value="inactif">Inactif</option>
-                  <option value="prospect">Prospect</option>
-                </select>
-              </div>
-              <div class="form-group full-width">
-                <label>Notes</label>
-                <textarea [(ngModel)]="currentClient.notes" name="notes" rows="4"></textarea>
-              </div>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button type="button" class="btn-cancel" (click)="cancelForm()">Annuler</button>
-            <button type="submit" class="btn-save" [disabled]="clientForm.invalid">💾 Enregistrer</button>
-          </div>
-        </form>
+
+      <div class="kpi-grid" *ngIf="clients.length > 0">
+        <div class="kpi-card total"><div class="kpi-icon">👥</div><div class="kpi-content"><span class="kpi-value">{{ totalClients }}</span><span class="kpi-label">Total clients</span></div></div>
+        <div class="kpi-card actifs"><div class="kpi-icon">✅</div><div class="kpi-content"><span class="kpi-value">{{ clientsActifs }}</span><span class="kpi-label">Clients actifs</span></div></div>
+        <div class="kpi-card mois"><div class="kpi-icon">📅</div><div class="kpi-content"><span class="kpi-value">{{ clientsMois }}</span><span class="kpi-label">Nouveaux ce mois</span></div></div>
+        <div class="kpi-card villes"><div class="kpi-icon">🏙️</div><div class="kpi-content"><span class="kpi-value">{{ villesUniques }}</span><span class="kpi-label">Villes représentées</span></div></div>
       </div>
-      <div class="filters-bar" *ngIf="clients.length > 0">
-        <div class="search-box">
-          <span class="search-icon">🔍</span>
-          <input [(ngModel)]="searchTerm" (ngModelChange)="filterClients()" placeholder="Rechercher...">
-        </div>
-        <select [(ngModel)]="typeFilter" (ngModelChange)="filterClients()" class="filter-select">
-          <option value="">Tous types</option>
-          <option value="entreprise">Entreprise</option>
-          <option value="particulier">Particulier</option>
-          <option value="association">Association</option>
-          <option value="administration">Administration</option>
-        </select>
-        <select [(ngModel)]="statutFilter" (ngModelChange)="filterClients()" class="filter-select">
-          <option value="">Tous statuts</option>
-          <option value="actif">Actif</option>
-          <option value="inactif">Inactif</option>
-          <option value="prospect">Prospect</option>
-        </select>
-      </div>
-      <div class="clients-grid" *ngIf="clients.length > 0; else emptyState">
-        <div class="client-card" *ngFor="let c of filteredClients">
-          <div class="client-header">
-            <span class="client-nom">{{ c.type === 'particulier' ? c.civilite + ' ' + c.nom + ' ' + (c.prenom || '') : c.raison_sociale }}</span>
-            <span class="client-code">{{ c.code }}</span>
-          </div>
-          <div class="client-body">
-            <p><span class="label">NIF:</span> {{ c.nif }}</p>
-            <p><span class="label">Ville:</span> {{ c.ville }}</p>
-            <p><span class="label">Tél:</span> {{ c.telephone }}</p>
-            <p><span class="label">Email:</span> {{ c.email }}</p>
-            <p><span class="label">Encours:</span> {{ c.encours | number }} FCFA</p>
-          </div>
-          <div class="client-footer">
-            <span class="badge-statut" [class]="c.statut">{{ getStatutLabel(c.statut) }}</span>
-            <div class="client-actions">
-              <button class="btn-icon" [routerLink]="['/clients', c.id]" title="Voir">👁️</button>
-              <button class="btn-icon" (click)="editClient(c)" title="Modifier">✏️</button>
-              <button class="btn-icon" (click)="duplicateClient(c)" title="Dupliquer">📋</button>
-              <button class="btn-icon delete" (click)="confirmDelete(c)" title="Supprimer">��️</button>
-            </div>
+
+      <div class="modal-overlay" *ngIf="showForm">
+        <div class="modal-container large">
+          <div class="modal-header"><h3>{{ editMode ? '✏️ Modifier' : '➕ Nouveau' }} client</h3><button class="modal-close" (click)="cancelForm()">✕</button></div>
+          <div class="modal-body">
+            <form (ngSubmit)="saveClient()" #clientForm="ngForm">
+              <div class="tabs">
+                <button type="button" [class.active]="activeTab === 'info'" (click)="activeTab = 'info'">📋 Informations</button>
+                <button type="button" [class.active]="activeTab === 'adresse'" (click)="activeTab = 'adresse'">📍 Adresse</button>
+                <button type="button" [class.active]="activeTab === 'notes'" (click)="activeTab = 'notes'">📝 Notes</button>
+              </div>
+              <div *ngIf="activeTab === 'info'" class="tab-content">
+                <div class="form-row">
+                  <div class="form-group"><label>Nom *</label><input type="text" [(ngModel)]="currentClient.nom" name="nom" required></div>
+                  <div class="form-group"><label>Prénom</label><input type="text" [(ngModel)]="currentClient.prenom" name="prenom"></div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group"><label>Email *</label><input type="email" [(ngModel)]="currentClient.email" name="email" required email></div>
+                  <div class="form-group"><label>Téléphone *</label><input type="tel" [(ngModel)]="currentClient.telephone" name="telephone" required></div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group"><label>Secteur d'activité</label><input type="text" [(ngModel)]="currentClient.secteur" name="secteur"></div>
+                  <div class="form-group"><label>Statut</label><select [(ngModel)]="currentClient.statut"><option value="actif">✅ Actif</option><option value="inactif">⏸️ Inactif</option></select></div>
+                </div>
+              </div>
+              <div *ngIf="activeTab === 'adresse'" class="tab-content">
+                <div class="form-group"><label>Adresse</label><textarea [(ngModel)]="currentClient.adresse" rows="2"></textarea></div>
+                <div class="form-row"><div class="form-group"><label>Ville</label><input type="text" [(ngModel)]="currentClient.ville"></div><div class="form-group"><label>Code postal</label><input type="text" [(ngModel)]="currentClient.code_postal"></div></div>
+                <div class="form-group"><label>Pays</label><input type="text" [(ngModel)]="currentClient.pays" value="Mali"></div>
+              </div>
+              <div *ngIf="activeTab === 'notes'" class="tab-content"><div class="form-group"><label>Notes</label><textarea [(ngModel)]="currentClient.notes" rows="5"></textarea></div></div>
+              <div class="modal-actions"><button type="button" class="btn-secondary" (click)="cancelForm()">Annuler</button><button type="submit" class="btn-primary" [disabled]="clientForm.invalid">💾 Enregistrer</button></div>
+            </form>
           </div>
         </div>
       </div>
-      <ng-template #emptyState>
-        <div class="empty-state">
-          <div class="empty-icon">👥</div>
-          <h2>Aucun client</h2>
-          <p>Ajoutez votre premier client</p>
-          <button class="btn-primary" (click)="showForm = true">+ Nouveau client</button>
+
+      <div class="filters-section" *ngIf="clients.length > 0">
+        <div class="search-wrapper"><span class="search-icon">🔍</span><input [(ngModel)]="searchTerm" (ngModelChange)="filterClients()" placeholder="Rechercher..." class="search-input"></div>
+        <div class="filter-group">
+          <select [(ngModel)]="statutFilter" (ngModelChange)="filterClients()"><option value="">📊 Tous statuts</option><option value="actif">✅ Actif</option><option value="inactif">⏸️ Inactif</option></select>
+          <select [(ngModel)]="periodeFilter" (ngModelChange)="filterClients()"><option value="">📅 Toutes périodes</option><option value="today">Aujourd'hui</option><option value="week">Cette semaine</option><option value="month">Ce mois</option><option value="last_month">Mois dernier</option></select>
         </div>
-      </ng-template>
-      <div class="modal" *ngIf="showDeleteModal">
-        <div class="modal-content">
-          <h3>Confirmer la suppression</h3>
-          <p>Supprimer le client <strong>{{ clientToDelete?.nom || clientToDelete?.raison_sociale }}</strong> ?</p>
-          <div class="modal-actions">
-            <button class="btn-cancel" (click)="showDeleteModal = false">Annuler</button>
-            <button class="btn-delete" (click)="deleteClient()">🗑️ Supprimer</button>
+      </div>
+
+      <div class="clients-section" *ngIf="clients.length > 0; else emptyState">
+        <div class="section-header"><h2>📋 Liste des clients</h2><div class="header-stats"><span class="stat-badge">{{ paginatedClients.length }} / {{ filteredClients.length }} affiché(s)</span></div></div>
+        <div class="clients-grid">
+          <div class="client-card" *ngFor="let c of paginatedClients" [class]="c.statut">
+            <div class="card-header">
+              <div class="header-left"><div class="client-avatar">{{ getInitials(c.nom) }}</div><div class="client-info"><div class="client-nom">{{ c.nom }} {{ c.prenom || '' }}</div><div class="client-email">{{ c.email }}</div><div class="client-tel">{{ c.telephone }}</div></div></div>
+              <div class="header-right"><span class="statut-badge" [class]="c.statut">{{ c.statut === 'actif' ? '✅ Actif' : '⏸️ Inactif' }}</span></div>
+            </div>
+            <div class="card-body">
+              <div class="info-row"><span class="info-label">📍 Ville:</span><span class="info-value">{{ c.ville || '-' }}</span></div>
+              <div class="info-row"><span class="info-label">🏢 Secteur:</span><span class="info-value">{{ c.secteur || '-' }}</span></div>
+              <div class="info-row"><span class="info-label">📅 Créé le:</span><span class="info-value">{{ c.created_at | date:'dd/MM/yyyy' }}</span></div>
+            </div>
+            <div class="card-footer"><div class="footer-actions"><button class="action-icon" (click)="viewDetails(c)">👁️</button><button class="action-icon" (click)="editClient(c)">✏️</button><button class="action-icon" (click)="duplicateClient(c)">📋</button><button class="action-icon delete" (click)="deleteClient(c)">🗑️</button></div></div>
           </div>
+        </div>
+        <div class="pagination" *ngIf="totalPages > 1">
+          <button class="page-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">◀</button>
+          <span *ngFor="let page of getPages()"><button class="page-btn" [class.active]="page === currentPage" (click)="changePage(page)">{{ page }}</button></span>
+          <button class="page-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">▶</button>
+        </div>
+      </div>
+
+      <ng-template #emptyState><div class="empty-state"><div class="empty-icon">👥</div><h2>Aucun client</h2><p>Commencez par ajouter votre premier client</p><button class="btn-primary" (click)="openForm()">+ Nouveau client</button></div></ng-template>
+
+      <div class="modal-overlay" *ngIf="showDetailsModal && selectedClient">
+        <div class="modal-container large">
+          <div class="modal-header"><h3>Détails du client - {{ selectedClient.nom }} {{ selectedClient.prenom }}</h3><button class="modal-close" (click)="showDetailsModal = false">✕</button></div>
+          <div class="modal-body"><div class="details-grid"><div class="detail-section"><h4>📋 Informations générales</h4><p><strong>Nom:</strong> {{ selectedClient.nom }} {{ selectedClient.prenom || '' }}</p><p><strong>Email:</strong> {{ selectedClient.email }}</p><p><strong>Téléphone:</strong> {{ selectedClient.telephone }}</p><p><strong>Secteur:</strong> {{ selectedClient.secteur || '-' }}</p><p><strong>Statut:</strong> {{ selectedClient.statut === 'actif' ? '✅ Actif' : '⏸️ Inactif' }}</p><p><strong>Date création:</strong> {{ selectedClient.created_at | date:'dd/MM/yyyy HH:mm' }}</p></div><div class="detail-section"><h4>📍 Adresse</h4><p>{{ selectedClient.adresse || '-' }}</p><p>{{ selectedClient.code_postal }} {{ selectedClient.ville }}</p><p>{{ selectedClient.pays || 'Mali' }}</p></div><div class="detail-section full-width" *ngIf="selectedClient.notes"><h4>📝 Notes</h4><p>{{ selectedClient.notes }}</p></div></div></div>
         </div>
       </div>
     </div>
   `,
   styles: [`
-    .clients-container { padding: 24px; max-width: 1400px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .clients-container { padding: 24px; max-width: 1400px; margin: 0 auto; background: #F9FAFB; min-height: 100vh; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
     h1 { color: #1F2937; font-size: 28px; margin: 0; }
-    .subtitle { color: #6B7280; margin: 0; }
-    .btn-add, .btn-primary { background: #EC4899; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-    .alert-success { background: #10B981; color: white; padding: 12px; border-radius: 8px; margin-bottom: 20px; }
-    .form-card { background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 1px solid #FCE7F3; }
-    .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #FCE7F3; padding-bottom: 10px; }
-    .tabs button { background: none; border: none; padding: 8px 16px; cursor: pointer; color: #6B7280; border-radius: 20px; }
+    .subtitle { color: #6B7280; margin: 8px 0 0 0; }
+    .header-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-add, .btn-primary { background: #EC4899; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+    .btn-add:hover, .btn-primary:hover { background: #DB2777; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(236,72,153,0.3); }
+    .btn-excel { background: #10B981; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 500; }
+    .btn-pdf { background: #EF4444; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 500; }
+    .alert-success { background: #10B981; color: white; padding: 14px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
+    .kpi-card { background: white; border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s; }
+    .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .kpi-icon { font-size: 32px; width: 56px; height: 56px; background: #FDF2F8; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+    .kpi-content { flex: 1; }
+    .kpi-value { display: block; font-size: 24px; font-weight: 700; }
+    .kpi-label { font-size: 13px; color: #6B7280; margin-top: 4px; }
+    .kpi-card.total .kpi-value { color: #EC4899; }
+    .kpi-card.actifs .kpi-value { color: #10B981; }
+    .kpi-card.mois .kpi-value { color: #3B82F6; }
+    .kpi-card.villes .kpi-value { color: #F59E0B; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+    .modal-container { background: white; border-radius: 20px; width: 90%; max-width: 800px; max-height: 85vh; overflow-y: auto; animation: slideIn 0.2s ease; }
+    .modal-container.large { max-width: 800px; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #F3F4F6; }
+    .modal-header h3 { margin: 0; color: #EC4899; }
+    .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #9CA3AF; }
+    .modal-body { padding: 24px; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #F3F4F6; padding-bottom: 10px; flex-wrap: wrap; }
+    .tabs button { background: none; border: none; padding: 8px 16px; cursor: pointer; color: #6B7280; border-radius: 20px; transition: all 0.2s; }
     .tabs button.active { background: #EC4899; color: white; }
-    .tab-content { margin-top: 20px; }
-    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-    .full-width { grid-column: span 2; }
-    .form-group { display: flex; flex-direction: column; }
-    label { margin-bottom: 5px; color: #4B5563; }
-    input, textarea, select { padding: 10px; border: 2px solid #FCE7F3; border-radius: 8px; }
-    .form-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 30px; }
-    .btn-cancel { background: white; border: 2px solid #FCE7F3; border-radius: 8px; padding: 10px 20px; cursor: pointer; }
-    .btn-save { background: #EC4899; color: white; border: none; padding: 10px 30px; border-radius: 8px; cursor: pointer; }
-    .filters-bar { display: flex; gap: 15px; margin-bottom: 24px; flex-wrap: wrap; }
-    .search-box { flex: 2; background: white; border: 2px solid #FCE7F3; border-radius: 12px; padding: 8px 16px; display: flex; align-items: center; gap: 12px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .form-group { display: flex; flex-direction: column; margin-bottom: 16px; }
+    .form-group label { margin-bottom: 8px; color: #4B5563; font-weight: 500; font-size: 14px; }
+    .form-group input, .form-group textarea, .form-group select { padding: 12px; border: 2px solid #F3F4F6; border-radius: 10px; font-size: 14px; transition: border-color 0.2s; }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #EC4899; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+    .btn-secondary { background: white; border: 2px solid #FCE7F3; border-radius: 10px; padding: 10px 20px; cursor: pointer; color: #4B5563; }
+    .btn-secondary:hover { background: #F9FAFB; }
+    .filters-section { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; background: white; padding: 16px 20px; border-radius: 16px; }
+    .search-wrapper { flex: 2; display: flex; align-items: center; gap: 12px; background: #F9FAFB; border-radius: 12px; padding: 8px 16px; border: 1px solid #F3F4F6; }
     .search-icon { color: #9CA3AF; }
-    .search-box input { flex: 1; border: none; outline: none; }
-    .filter-select { flex: 1; padding: 8px 12px; border: 2px solid #FCE7F3; border-radius: 8px; background: white; }
-    .clients-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
-    .client-card { background: white; border-radius: 12px; padding: 20px; border: 1px solid #FCE7F3; }
-    .client-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .client-nom { font-weight: 600; color: #1F2937; font-size: 16px; }
-    .client-code { font-size: 12px; padding: 4px 8px; background: #FDF2F8; border-radius: 4px; color: #EC4899; }
-    .client-body p { margin: 5px 0; color: #6B7280; }
-    .client-body .label { color: #4B5563; width: 80px; display: inline-block; }
-    .client-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid #FCE7F3; }
-    .badge-statut { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
-    .badge-statut.actif { background: #10B981; color: white; }
-    .badge-statut.inactif { background: #9CA3AF; color: white; }
-    .badge-statut.prospect { background: #F59E0B; color: white; }
-    .client-actions { display: flex; gap: 8px; }
-    .btn-icon { background: none; border: 1px solid #FCE7F3; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
-    .btn-icon.delete:hover { background: #FEE2E2; border-color: #EF4444; }
-    .empty-state { text-align: center; padding: 60px; background: white; border-radius: 12px; border: 2px dashed #FCE7F3; }
+    .search-input { flex: 1; border: none; background: transparent; outline: none; }
+    .filter-group { display: flex; gap: 12px; flex: 2; flex-wrap: wrap; }
+    .filter-select { padding: 8px 16px; border: 1px solid #F3F4F6; border-radius: 10px; background: white; flex: 1; }
+    .clients-section { background: white; border-radius: 16px; padding: 20px; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 16px; }
+    .section-header h2 { margin: 0; font-size: 18px; }
+    .header-stats { display: flex; gap: 12px; }
+    .stat-badge { padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; background: #FEF3F9; color: #EC4899; }
+    .clients-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px; }
+    .client-card { background: #F9FAFB; border-radius: 16px; padding: 20px; transition: all 0.2s; border-left: 4px solid transparent; }
+    .client-card.actif { border-left-color: #10B981; }
+    .client-card.inactif { border-left-color: #EF4444; opacity: 0.7; }
+    .client-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+    .header-left { display: flex; gap: 12px; align-items: flex-start; flex: 1; }
+    .client-avatar { font-size: 28px; width: 56px; height: 56px; background: linear-gradient(135deg, #EC4899, #F472B6); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 20px; }
+    .client-info { flex: 1; }
+    .client-nom { font-weight: 600; color: #1F2937; margin-bottom: 4px; }
+    .client-email { font-size: 12px; color: #6B7280; margin-bottom: 2px; word-break: break-all; }
+    .client-tel { font-size: 12px; color: #9CA3AF; font-family: monospace; }
+    .header-right { text-align: right; }
+    .statut-badge { font-size: 11px; padding: 4px 8px; border-radius: 20px; }
+    .statut-badge.actif { background: #DCFCE7; color: #16A34A; }
+    .statut-badge.inactif { background: #FEE2E2; color: #EF4444; }
+    .card-body { margin: 16px 0; }
+    .info-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; font-size: 13px; flex-wrap: wrap; }
+    .info-label { color: #6B7280; min-width: 80px; }
+    .info-value { font-weight: 500; color: #1F2937; }
+    .card-footer { display: flex; justify-content: flex-end; margin-top: 16px; padding-top: 16px; border-top: 1px solid #F3F4F6; }
+    .footer-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .action-icon { background: none; border: 1px solid #FCE7F3; border-radius: 8px; padding: 6px 12px; cursor: pointer; transition: all 0.2s; font-size: 14px; }
+    .action-icon:hover { background: #FEF3F9; border-color: #EC4899; }
+    .action-icon.delete:hover { background: #FEE2E2; border-color: #EF4444; }
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 20px; }
+    .page-btn { background: white; border: 1px solid #FCE7F3; border-radius: 6px; padding: 8px 12px; cursor: pointer; color: #4B5563; min-width: 40px; }
+    .page-btn:hover:not(:disabled) { background: #FDF2F8; border-color: #EC4899; color: #EC4899; }
+    .page-btn.active { background: #EC4899; color: white; border-color: #EC4899; }
+    .page-btn.disabled, .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .empty-state { text-align: center; padding: 60px; background: white; border-radius: 16px; border: 2px dashed #FCE7F3; }
     .empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
-    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal-content { background: white; border-radius: 12px; padding: 30px; max-width: 400px; width: 90%; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px; }
-    .btn-delete { background: #EF4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+    .details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .detail-section { margin-bottom: 16px; }
+    .detail-section h4 { color: #EC4899; margin: 0 0 12px 0; font-size: 16px; }
+    .detail-section p { margin: 8px 0; font-size: 14px; color: #4B5563; }
+    .detail-section.full-width { grid-column: span 2; }
+    @media (max-width: 1024px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .form-row { grid-template-columns: 1fr; gap: 12px; } .details-grid { grid-template-columns: 1fr; } .detail-section.full-width { grid-column: span 1; } }
+    @media (max-width: 768px) { .kpi-grid { grid-template-columns: 1fr; } .clients-grid { grid-template-columns: 1fr; } }
   `]
 })
 export class Clients implements OnInit {
   clients: Client[] = [];
   filteredClients: Client[] = [];
-  currentClient: any = {
-    code: 'CLI-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
-    type: 'entreprise',
-    civilite: 'M',
-    nom: '',
-    prenom: '',
-    raison_sociale: '',
-    forme_juridique: '',
-    nif: '',
-    registre_commerce: '',
-    date_creation: '',
-    secteur_activite: '',
-    adresse: '',
-    ville: '',
-    code_postal: '',
-    pays: 'Mali',
-    telephone: '',
-    email: '',
-    site_web: '',
-    fax: '',
-    contact_nom: '',
-    contact_fonction: '',
-    contact_telephone: '',
-    contact_email: '',
-    conditions_paiement: '',
-    delai_paiement: 30,
-    devise: 'FCFA',
-    plafond_credit: 0,
-    encours: 0,
-    statut: 'actif',
-    notes: '',
-    date_creation_compte: new Date().toISOString().split('T')[0]
-  };
-  activeTab = 'info';
+  paginatedClients: Client[] = [];
+
   searchTerm = '';
-  typeFilter = '';
   statutFilter = '';
+  periodeFilter = '';
+
+  currentPage = 1;
+  itemsPerPage = 10;
+  totalPages = 1;
+
   showForm = false;
   editMode = false;
-  showDeleteModal = false;
-  clientToDelete: Client | null = null;
+  showDetailsModal = false;
+  selectedClient: Client | null = null;
+  currentClient: Client = { nom: '', email: '', telephone: '', statut: 'actif' };
+  activeTab = 'info';
   successMessage = '';
+
+  totalClients = 0;
   clientsActifs = 0;
+  clientsMois = 0;
+  villesUniques = 0;
+
   ngOnInit() {
     this.loadClients();
   }
+
   loadClients() {
     const saved = localStorage.getItem('clients');
     this.clients = saved ? JSON.parse(saved) : [];
-    this.filteredClients = [...this.clients];
-    this.calculerStats();
+    this.updateKPIs();
+    this.applyFilters();
   }
-  saveClient() {
-    if (this.editMode) {
-      const index = this.clients.findIndex(c => c.id === this.currentClient.id);
-      if (index !== -1) {
-        this.clients[index] = { ...this.currentClient };
-        this.showSuccess('Client modifié !');
-      }
-    } else {
-      const newClient = { ...this.currentClient, id: Date.now() };
-      this.clients.push(newClient);
-      this.showSuccess('Client ajouté !');
-    }
+
+  saveClients() {
     localStorage.setItem('clients', JSON.stringify(this.clients));
-    this.calculerStats();
-    this.filterClients();
-    this.cancelForm();
+    this.updateKPIs();
+    this.applyFilters();
   }
-  editClient(c: Client) {
-    this.currentClient = { ...c };
-    this.editMode = true;
-    this.showForm = true;
+
+  updateKPIs() {
+    this.totalClients = this.clients.length;
+    this.clientsActifs = this.clients.filter(c => c.statut === 'actif').length;
+    const now = new Date();
+    this.clientsMois = this.clients.filter(c => {
+      if (!c.created_at) return false;
+      const date = new Date(c.created_at);
+      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+    }).length;
+    const villes = new Set(this.clients.map(c => c.ville).filter((v): v is string => !!v && v.trim() !== ''));
+    this.villesUniques = villes.size;
   }
-  duplicateClient(c: Client) {
-    const newClient = { 
-      ...c, 
-      id: Date.now(), 
-      code: c.code + '-COPY',
-      raison_sociale: c.raison_sociale ? c.raison_sociale + ' (copie)' : '',
-      nom: c.nom ? c.nom + ' (copie)' : ''
-    };
-    this.clients.push(newClient);
-    localStorage.setItem('clients', JSON.stringify(this.clients));
-    this.filterClients();
-    this.calculerStats();
-    this.showSuccess('Client dupliqué !');
-  }
-  confirmDelete(c: Client) {
-    this.clientToDelete = c;
-    this.showDeleteModal = true;
-  }
-  deleteClient() {
-    if (this.clientToDelete) {
-      this.clients = this.clients.filter(c => c.id !== this.clientToDelete?.id);
-      localStorage.setItem('clients', JSON.stringify(this.clients));
-      this.filterClients();
-      this.calculerStats();
-      this.showDeleteModal = false;
-      this.clientToDelete = null;
-      this.showSuccess('Client supprimé !');
-    }
-  }
-  cancelForm() {
-    this.currentClient = {
-      code: 'CLI-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
-      type: 'entreprise',
-      civilite: 'M',
-      nom: '',
-      prenom: '',
-      raison_sociale: '',
-      forme_juridique: '',
-      nif: '',
-      registre_commerce: '',
-      date_creation: '',
-      secteur_activite: '',
-      adresse: '',
-      ville: '',
-      code_postal: '',
-      pays: 'Mali',
-      telephone: '',
-      email: '',
-      site_web: '',
-      fax: '',
-      contact_nom: '',
-      contact_fonction: '',
-      contact_telephone: '',
-      contact_email: '',
-      conditions_paiement: '',
-      delai_paiement: 30,
-      devise: 'FCFA',
-      plafond_credit: 0,
-      encours: 0,
-      statut: 'actif',
-      notes: '',
-      date_creation_compte: new Date().toISOString().split('T')[0]
-    };
-    this.activeTab = 'info';
-    this.showForm = false;
-    this.editMode = false;
-  }
-  filterClients() {
-    let filtered = this.clients;
-    if (this.searchTerm) {
-      const term = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(c => 
+
+  applyFilters() {
+    let filtered = [...this.clients];
+    const term = this.searchTerm.toLowerCase().trim();
+    if (term) {
+      filtered = filtered.filter(c =>
         c.nom?.toLowerCase().includes(term) ||
         c.prenom?.toLowerCase().includes(term) ||
-        c.raison_sociale?.toLowerCase().includes(term) ||
-        c.code?.toLowerCase().includes(term) ||
         c.email?.toLowerCase().includes(term) ||
+        c.telephone?.includes(term) ||
         c.ville?.toLowerCase().includes(term)
       );
     }
-    if (this.typeFilter) {
-      filtered = filtered.filter(c => c.type === this.typeFilter);
-    }
-    if (this.statutFilter) {
-      filtered = filtered.filter(c => c.statut === this.statutFilter);
+    if (this.statutFilter) filtered = filtered.filter(c => c.statut === this.statutFilter);
+    if (this.periodeFilter) {
+      const today = new Date(); today.setHours(0,0,0,0);
+      filtered = filtered.filter(c => {
+        if (!c.created_at) return false;
+        const date = new Date(c.created_at);
+        if (isNaN(date.getTime())) return false;
+        switch (this.periodeFilter) {
+          case 'today': return date.toDateString() === today.toDateString();
+          case 'week': const weekAgo = new Date(today); weekAgo.setDate(today.getDate() - 7); return date >= weekAgo;
+          case 'month': return date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+          case 'last_month': const lastMonth = new Date(today); lastMonth.setMonth(today.getMonth() - 1); return date.getMonth() === lastMonth.getMonth() && date.getFullYear() === lastMonth.getFullYear();
+          default: return true;
+        }
+      });
     }
     this.filteredClients = filtered;
+    this.updatePagination();
   }
-  calculerStats() {
-    this.clientsActifs = this.clients.filter(c => c.statut === 'actif').length;
+
+  updatePagination() {
+    this.totalPages = Math.ceil(this.filteredClients.length / this.itemsPerPage);
+    if (this.currentPage > this.totalPages) this.currentPage = Math.max(1, this.totalPages);
+    this.setPaginatedClients();
   }
-  getStatutLabel(statut: string): string {
-    const labels: any = { actif: 'Actif', inactif: 'Inactif', prospect: 'Prospect' };
-    return labels[statut] || statut;
+
+  setPaginatedClients() {
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    const end = start + this.itemsPerPage;
+    this.paginatedClients = this.filteredClients.slice(start, end);
   }
-  showSuccess(msg: string) {
-    this.successMessage = msg;
-    setTimeout(() => this.successMessage = '', 3000);
+
+  changePage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.setPaginatedClients();
+    }
+  }
+
+  getPages(): number[] {
+    const pages: number[] = [];
+    const maxVisible = 5;
+    let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(this.totalPages, start + maxVisible - 1);
+    if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+
+  filterClients() { this.currentPage = 1; this.applyFilters(); }
+
+  openForm() { this.currentClient = { nom: '', prenom: '', email: '', telephone: '', pays: 'Mali', statut: 'actif' }; this.editMode = false; this.showForm = true; this.activeTab = 'info'; }
+  editClient(client: Client) { this.currentClient = { ...client }; this.editMode = true; this.showForm = true; this.activeTab = 'info'; }
+  cancelForm() { this.showForm = false; this.editMode = false; }
+
+  saveClient() {
+    if (this.editMode && this.currentClient.id) {
+      const index = this.clients.findIndex(c => c.id === this.currentClient.id);
+      if (index !== -1) {
+        this.clients[index] = { ...this.currentClient, updated_at: new Date().toISOString() };
+        this.showSuccess('Client modifié');
+      }
+    } else {
+      const newClient: Client = { ...this.currentClient, id: Date.now(), created_at: new Date().toISOString() };
+      this.clients.push(newClient);
+      this.showSuccess('Client ajouté');
+    }
+    this.saveClients();
+    this.cancelForm();
+  }
+
+  duplicateClient(client: Client) {
+    const newClient: Client = { ...client, id: undefined, nom: `${client.nom} (copie)`, email: `copy_${client.email}`, created_at: new Date().toISOString() };
+    this.clients.push(newClient);
+    this.saveClients();
+    this.showSuccess('Client dupliqué');
+  }
+
+  viewDetails(client: Client) { this.selectedClient = client; this.showDetailsModal = true; }
+
+  deleteClient(client: Client) {
+    if (confirm(`Voulez-vous vraiment supprimer ${client.nom} ${client.prenom || ''} ?`)) {
+      this.clients = this.clients.filter(c => c.id !== client.id);
+      this.saveClients();
+      this.showSuccess('Client supprimé');
+    }
+  }
+
+  getInitials(nom: string): string { if (!nom) return '??'; return nom.split(' ').map(n => n[0]).join('').toUpperCase().substring(0,2); }
+
+  showSuccess(msg: string) { this.successMessage = msg; setTimeout(() => this.successMessage = '', 3000); }
+
+  exportToExcel() {
+    const colonnes = ['ID', 'Nom', 'Prénom', 'Email', 'Téléphone', 'Adresse', 'Ville', 'Code postal', 'Pays', 'Secteur', 'Statut', 'Date création'];
+    const lignes = this.filteredClients.map(c => [c.id || '', c.nom, c.prenom || '', c.email, c.telephone, c.adresse || '', c.ville || '', c.code_postal || '', c.pays || '', c.secteur || '', c.statut === 'actif' ? 'Actif' : 'Inactif', c.created_at ? new Date(c.created_at).toLocaleDateString() : '']);
+    const csvContent = [colonnes, ...lignes].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.setAttribute('download', `clients_${new Date().toISOString().slice(0,19)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    this.showSuccess('Export Excel effectué');
+  }
+
+  exportToPDF() {
+    const contenu = `
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="UTF-8"><title>Liste des clients</title>
+      <style>body{font-family:Arial;margin:20px;} h1{color:#EC4899;text-align:center;} table{width:100%;border-collapse:collapse;margin-top:20px;} th,td{border:1px solid #ddd;padding:8px;text-align:left;} th{background:#f2f2f2;} .footer{text-align:center;margin-top:30px;font-size:12px;color:gray;}</style>
+      </head>
+      <body><h1>Liste des clients</h1><p>Généré le ${new Date().toLocaleString()}</p>
+      <table><thead><tr><th>ID</th><th>Nom</th><th>Prénom</th><th>Email</th><th>Téléphone</th><th>Ville</th><th>Statut</th></tr></thead>
+      <tbody>${this.filteredClients.map(c => `<tr><td>${c.id || ''}</td><td>${c.nom}</td><td>${c.prenom || ''}</td><td>${c.email}</td><td>${c.telephone}</td><td>${c.ville || '-'}</td><td>${c.statut === 'actif' ? 'Actif' : 'Inactif'}</td></tr>`).join('')}</tbody>
+      </table><div class="footer">PulseBusiness - Export clients</div></body></html>
+    `;
+    const win = window.open('', '_blank');
+    if (win) { win.document.write(contenu); win.document.close(); win.print(); }
+    else { alert('Veuillez autoriser les pop-ups pour exporter en PDF'); }
   }
 }

@@ -6,7 +6,7 @@ export interface User {
   id: number;
   email: string;
   nom: string;
-  prenom: string;
+  prenom?: string;
   entreprise?: string;
   role: string;
 }
@@ -20,7 +20,8 @@ export interface LoginResponse {
   providedIn: 'root'
 })
 export class ApiService {
-  private apiUrl = 'http://localhost:3004/api';
+  // ✅ URL corrigée : port 3005 (backend réel)
+  private apiUrl = 'http://localhost:3005/api';
   private tokenKey = 'auth_token';
   private userKey = 'user_data';
 
@@ -29,9 +30,8 @@ export class ApiService {
   async login(email: string, password: string): Promise<User | null> {
     try {
       const response = await lastValueFrom(
-        this.http.post<any>(`${this.apiUrl}/auth/login`, { email, password })
+        this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, { email, password })
       );
-      
       if (response && response.token) {
         this.setToken(response.token);
         this.setUser(response.user);
@@ -47,9 +47,8 @@ export class ApiService {
   async register(userData: any): Promise<User | null> {
     try {
       const response = await lastValueFrom(
-        this.http.post<any>(`${this.apiUrl}/auth/register`, userData)
+        this.http.post<LoginResponse>(`${this.apiUrl}/auth/register`, userData)
       );
-      
       if (response && response.token) {
         this.setToken(response.token);
         this.setUser(response.user);
@@ -103,6 +102,19 @@ export class ApiService {
     });
   }
 
+  async getProfile(): Promise<User | null> {
+    try {
+      return await lastValueFrom(
+        this.http.get<User>(`${this.apiUrl}/auth/profile`, {
+          headers: this.getAuthHeaders()
+        })
+      );
+    } catch (error) {
+      console.error('Erreur getProfile:', error);
+      return null;
+    }
+  }
+
   async getClients(): Promise<any[]> {
     try {
       return await lastValueFrom(
@@ -113,6 +125,19 @@ export class ApiService {
     } catch (error) {
       console.error('Erreur getClients:', error);
       return [];
+    }
+  }
+
+  async createClient(client: any): Promise<any | null> {
+    try {
+      return await lastValueFrom(
+        this.http.post<any>(`${this.apiUrl}/clients`, client, {
+          headers: this.getAuthHeaders()
+        })
+      );
+    } catch (error) {
+      console.error('Erreur createClient:', error);
+      return null;
     }
   }
 
@@ -139,6 +164,19 @@ export class ApiService {
     } catch (error) {
       console.error('Erreur createFacture:', error);
       return null;
+    }
+  }
+
+  async getEmployes(): Promise<any[]> {
+    try {
+      return await lastValueFrom(
+        this.http.get<any[]>(`${this.apiUrl}/rh/employes`, {
+          headers: this.getAuthHeaders()
+        })
+      ) || [];
+    } catch (error) {
+      console.error('Erreur getEmployes:', error);
+      return [];
     }
   }
 }

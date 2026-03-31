@@ -5,22 +5,14 @@ import { FormsModule } from '@angular/forms';
 
 interface Competence {
   id?: number;
+  code: string;
   nom: string;
-  categorie: string;
   description?: string;
-  niveau_requis?: number;
-}
-
-interface EmployeCompetence {
-  id?: number;
-  employe_id: number;
-  competence_id: number;
-  competence_nom?: string;
-  niveau: number;
-  date_obtention?: string;
-  date_expiration?: string;
-  certificat?: string;
-  notes?: string;
+  categorie: 'technique' | 'soft_skill' | 'langue' | 'certification';
+  niveau: 'débutant' | 'intermédiaire' | 'avancé' | 'expert';
+  employes_maitrisant: number[]; // ids des employés
+  created_at: string;
+  updated_at?: string;
 }
 
 @Component({
@@ -31,444 +23,541 @@ interface EmployeCompetence {
     <div class="competences-container">
       <div class="header">
         <div>
-          <h1>Compétences</h1>
-          <p class="subtitle">{{ competences.length }} compétence(s) • {{ employeCompetences.length }} attribution(s)</p>
+          <h1>💡 Gestion des compétences</h1>
+          <p class="subtitle">{{ competences.length }} compétence(s) • {{ getEmployesCompetents() }} employé(s) compétent(s)</p>
         </div>
         <div class="header-actions">
-          <button class="btn-add" (click)="showCompetenceForm = !showCompetenceForm">+ Nouvelle compétence</button>
-          <button class="btn-assign" (click)="showAssignForm = !showAssignForm" *ngIf="competences.length > 0">📌 Attribuer</button>
+          <button class="btn-add" (click)="openForm()">+ Nouvelle compétence</button>
         </div>
       </div>
-      <div *ngIf="successMessage" class="alert-success">✅ {{ successMessage }}</div>
-      <div class="form-card" *ngIf="showCompetenceForm">
-        <h3>{{ editCompetenceMode ? 'Modifier' : 'Nouvelle' }} compétence</h3>
-        <form (ngSubmit)="saveCompetence()" #competenceForm="ngForm">
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Nom *</label>
-              <input type="text" [(ngModel)]="currentCompetence.nom" name="nom" required>
-            </div>
-            <div class="form-group">
-              <label>Catégorie</label>
-              <select [(ngModel)]="currentCompetence.categorie" name="categorie">
-                <option value="technique">Technique</option>
-                <option value="informatique">Informatique</option>
-                <option value="linguistique">Linguistique</option>
-                <option value="management">Management</option>
-                <option value="commercial">Commercial</option>
-                <option value="autre">Autre</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Niveau requis (1-5)</label>
-              <input type="number" [(ngModel)]="currentCompetence.niveau_requis" name="niveau_requis" min="1" max="5">
-            </div>
-            <div class="form-group full-width">
-              <label>Description</label>
-              <textarea [(ngModel)]="currentCompetence.description" name="description" rows="3"></textarea>
-            </div>
+
+      <div *ngIf="successMessage" class="alert-success">{{ successMessage }}</div>
+
+      <div class="kpi-grid" *ngIf="competences.length > 0">
+        <div class="kpi-card">
+          <div class="kpi-icon">💡</div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ competences.length }}</span>
+            <span class="kpi-label">Compétences</span>
           </div>
-          <div class="form-actions">
-            <button type="button" class="btn-cancel" (click)="cancelCompetenceForm()">Annuler</button>
-            <button type="submit" class="btn-save" [disabled]="competenceForm.invalid">💾 Enregistrer</button>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">👥</div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ getEmployesCompetents() }}</span>
+            <span class="kpi-label">Employés compétents</span>
           </div>
-        </form>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">🔧</div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ getCompetencesTechniques() }}</span>
+            <span class="kpi-label">Techniques</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">🗣️</div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ getSoftSkills() }}</span>
+            <span class="kpi-label">Soft skills</span>
+          </div>
+        </div>
       </div>
-      <div class="form-card" *ngIf="showAssignForm">
-        <h3>Attribuer une compétence</h3>
-        <form (ngSubmit)="saveAttribution()" #assignForm="ngForm">
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Employé *</label>
-              <select [(ngModel)]="currentAttribution.employe_id" name="employe_id" required>
-                <option value="">Sélectionner</option>
-                <option *ngFor="let e of employes" [value]="e.id">{{ e.nom }} {{ e.prenom }}</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Compétence *</label>
-              <select [(ngModel)]="currentAttribution.competence_id" name="competence_id" required (change)="onCompetenceChange()">
-                <option value="">Sélectionner</option>
-                <option *ngFor="let c of competences" [value]="c.id">{{ c.nom }} ({{ c.categorie }})</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Niveau (1-5)</label>
-              <input type="number" [(ngModel)]="currentAttribution.niveau" name="niveau" min="1" max="5" required>
-            </div>
-            <div class="form-group">
-              <label>Date d'obtention</label>
-              <input type="date" [(ngModel)]="currentAttribution.date_obtention" name="date_obtention">
-            </div>
-            <div class="form-group">
-              <label>Date d'expiration</label>
-              <input type="date" [(ngModel)]="currentAttribution.date_expiration" name="date_expiration">
-            </div>
-            <div class="form-group">
-              <label>Certificat (URL)</label>
-              <input type="text" [(ngModel)]="currentAttribution.certificat" name="certificat">
-            </div>
-            <div class="form-group full-width">
-              <label>Notes</label>
-              <textarea [(ngModel)]="currentAttribution.notes" name="notes" rows="3"></textarea>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button type="button" class="btn-cancel" (click)="showAssignForm = false">Annuler</button>
-            <button type="submit" class="btn-save" [disabled]="assignForm.invalid">💾 Attribuer</button>
-          </div>
-        </form>
-      </div>
-      <div class="view-tabs">
-        <button [class.active]="activeView === 'competences'" (click)="activeView = 'competences'">Compétences</button>
-        <button [class.active]="activeView === 'employes'" (click)="activeView = 'employes'">Par employé</button>
-      </div>
-      <div *ngIf="activeView === 'competences'">
-        <div class="filters-bar" *ngIf="competences.length > 0">
-          <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input [(ngModel)]="searchTerm" (ngModelChange)="filterCompetences()" placeholder="Rechercher...">
-          </div>
+
+      <div class="filters-section" *ngIf="competences.length > 0">
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input [(ngModel)]="searchTerm" (ngModelChange)="filterCompetences()" placeholder="Rechercher par nom, catégorie..." class="search-input">
+        </div>
+        <div class="filter-group">
           <select [(ngModel)]="categorieFilter" (ngModelChange)="filterCompetences()" class="filter-select">
             <option value="">Toutes catégories</option>
-            <option value="technique">Technique</option>
-            <option value="informatique">Informatique</option>
-            <option value="linguistique">Linguistique</option>
-            <option value="management">Management</option>
-            <option value="commercial">Commercial</option>
-            <option value="autre">Autre</option>
+            <option value="technique">🔧 Technique</option>
+            <option value="soft_skill">🗣️ Soft skill</option>
+            <option value="langue">🌍 Langue</option>
+            <option value="certification">📜 Certification</option>
+          </select>
+          <select [(ngModel)]="niveauFilter" (ngModelChange)="filterCompetences()" class="filter-select">
+            <option value="">Tous niveaux</option>
+            <option value="débutant">🌱 Débutant</option>
+            <option value="intermédiaire">📘 Intermédiaire</option>
+            <option value="avancé">🚀 Avancé</option>
+            <option value="expert">🏆 Expert</option>
           </select>
         </div>
-        <div class="competences-grid" *ngIf="competences.length > 0; else emptyCompetences">
-          <div class="competence-card" *ngFor="let c of filteredCompetences">
-            <div class="competence-header">
-              <span class="competence-nom">{{ c.nom }}</span>
-              <span class="competence-categorie">{{ c.categorie }}</span>
-            </div>
-            <div class="competence-body">
-              <p><strong>Niveau requis:</strong> {{ c.niveau_requis || '-' }}/5</p>
-              <p class="description">{{ c.description || 'Aucune description' }}</p>
-              <p><strong>Employés:</strong> {{ getEmployesCountForCompetence(c.id!) }}</p>
-            </div>
-            <div class="competence-actions">
-              <button class="btn-icon" (click)="viewCompetenceDetails(c)" title="Voir">👁️</button>
-              <button class="btn-icon" (click)="editCompetence(c)" title="Modifier">✏️</button>
-              <button class="btn-icon delete" (click)="confirmDeleteCompetence(c)" title="Supprimer">🗑️</button>
-            </div>
+      </div>
+
+      <div class="competences-section" *ngIf="competences.length > 0; else emptyState">
+        <div class="section-header">
+          <h2>📋 Liste des compétences</h2>
+          <div class="header-stats">
+            <span class="stat-badge">{{ filteredCompetences.length }} / {{ competences.length }} affiché(s)</span>
           </div>
         </div>
-      </div>
-      <div *ngIf="activeView === 'employes'">
-        <div class="employes-competences" *ngIf="employes.length > 0; else noEmployes">
-          <div class="employe-card" *ngFor="let e of employes">
-            <div class="employe-header">
-              <span class="employe-nom">{{ e.nom }} {{ e.prenom }}</span>
-              <span class="employe-poste">{{ e.poste }}</span>
-            </div>
-            <div class="employe-competences-list">
-              <div *ngFor="let ec of getEmployeCompetences(e.id)" class="competence-item">
-                <span class="comp-nom">{{ ec.competence_nom }}</span>
-                <div class="comp-niveau">
-                  <span class="niveau-valeur">Niveau {{ ec.niveau }}/5</span>
-                  <div class="niveau-bar">
-                    <div class="niveau-fill" [style.width.%]="ec.niveau * 20"></div>
-                  </div>
+        <div class="competences-grid">
+          <div class="competence-card" *ngFor="let c of filteredCompetences">
+            <div class="card-header">
+              <div class="header-left">
+                <div class="competence-icon">{{ getCategorieIcon(c.categorie) }}</div>
+                <div class="competence-info">
+                  <div class="competence-code">{{ c.code }}</div>
+                  <div class="competence-nom">{{ c.nom }}</div>
                 </div>
               </div>
-              <div *ngIf="getEmployeCompetences(e.id).length === 0" class="no-competence">
-                Aucune compétence attribuée
+              <div class="header-right">
+                <span class="niveau-badge" [class]="c.niveau">{{ getNiveauLabel(c.niveau) }}</span>
               </div>
             </div>
-            <button class="btn-add-competence" (click)="assignToEmploye(e)">+ Ajouter compétence</button>
+            <div class="card-body">
+              <div class="info-row" *ngIf="c.description">
+                <span class="info-label">📝 Description:</span>
+                <span class="info-value">{{ c.description }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">👥 Employés:</span>
+                <span class="info-value">{{ c.employes_maitrisant.length }} personne(s)</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <div class="footer-actions">
+                <button class="action-icon" (click)="viewDetails(c)" title="Voir détails">👁️</button>
+                <button class="action-icon" (click)="editCompetence(c)" title="Modifier">✏️</button>
+                <button class="action-icon" (click)="gererEmployes(c)" title="Gérer employés">👥</button>
+                <button class="action-icon delete" (click)="confirmDelete(c)" title="Supprimer">🗑️</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <ng-template #emptyCompetences>
+
+      <ng-template #emptyState>
         <div class="empty-state">
-          <div class="empty-icon">⚡</div>
+          <div class="empty-icon">💡</div>
           <h2>Aucune compétence</h2>
-          <p>Créez votre première compétence</p>
-          <button class="btn-primary" (click)="showCompetenceForm = true">+ Nouvelle compétence</button>
+          <p>Ajoutez votre première compétence</p>
+          <button class="btn-primary" (click)="openForm()">+ Nouvelle compétence</button>
         </div>
       </ng-template>
-      <ng-template #noEmployes>
-        <div class="empty-state">
-          <div class="empty-icon">👥</div>
-          <h2>Aucun employé</h2>
-          <p>Ajoutez d'abord des employés</p>
-        </div>
-      </ng-template>
-      <div class="modal" *ngIf="showDetailsModal">
-        <div class="modal-content large">
+
+      <!-- Modal formulaire -->
+      <div class="modal-overlay" *ngIf="showForm">
+        <div class="modal-container">
           <div class="modal-header">
-            <h3>{{ selectedCompetence?.nom }}</h3>
-            <button class="btn-close" (click)="showDetailsModal = false">✕</button>
+            <h3>{{ editMode ? '✏️ Modifier' : '➕ Nouvelle' }} compétence</h3>
+            <button class="modal-close" (click)="cancelForm()">✕</button>
           </div>
-          <div class="modal-body" *ngIf="selectedCompetence">
-            <p><strong>Catégorie:</strong> {{ selectedCompetence.categorie }}</p>
-            <p><strong>Niveau requis:</strong> {{ selectedCompetence.niveau_requis || 'Non défini' }}/5</p>
-            <p><strong>Description:</strong> {{ selectedCompetence.description || 'Aucune description' }}</p>
-            <h4>Employés possédant cette compétence</h4>
-            <table class="attributions-table">
-              <thead>
-                <tr>
-                  <th>Employé</th>
-                  <th>Niveau</th>
-                  <th>Date obtention</th>
-                  <th>Date expiration</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let att of getAttributionsForCompetence(selectedCompetence.id!)">
-                  <td>{{ getEmployeName(att.employe_id) }}</td>
-                  <td>{{ att.niveau }}/5</td>
-                  <td>{{ att.date_obtention | date }}</td>
-                  <td>{{ att.date_expiration | date : 'Non définie' }}</td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="modal-body">
+            <form (ngSubmit)="saveCompetence()">
+              <div class="form-group">
+                <label>Code *</label>
+                <input type="text" [(ngModel)]="currentCompetence.code" required>
+              </div>
+              <div class="form-group">
+                <label>Nom *</label>
+                <input type="text" [(ngModel)]="currentCompetence.nom" required>
+              </div>
+              <div class="form-group">
+                <label>Description</label>
+                <textarea [(ngModel)]="currentCompetence.description" rows="2"></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Catégorie</label>
+                  <select [(ngModel)]="currentCompetence.categorie">
+                    <option value="technique">🔧 Technique</option>
+                    <option value="soft_skill">🗣️ Soft skill</option>
+                    <option value="langue">🌍 Langue</option>
+                    <option value="certification">📜 Certification</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Niveau requis</label>
+                  <select [(ngModel)]="currentCompetence.niveau">
+                    <option value="débutant">🌱 Débutant</option>
+                    <option value="intermédiaire">📘 Intermédiaire</option>
+                    <option value="avancé">🚀 Avancé</option>
+                    <option value="expert">🏆 Expert</option>
+                  </select>
+                </div>
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="btn-secondary" (click)="cancelForm()">Annuler</button>
+                <button type="submit" class="btn-primary">💾 Enregistrer</button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
-      <div class="modal" *ngIf="showDeleteModal">
-        <div class="modal-content">
-          <h3>Confirmer la suppression</h3>
-          <p>Supprimer {{ deleteType === 'competence' ? 'cette compétence' : 'cette attribution' }} ?</p>
-          <div class="modal-actions">
-            <button class="btn-cancel" (click)="showDeleteModal = false">Annuler</button>
-            <button class="btn-delete" (click)="confirmDelete()">🗑️ Supprimer</button>
+
+      <!-- Modal détails -->
+      <div class="modal-overlay" *ngIf="showDetailsModal && selectedCompetence">
+        <div class="modal-container">
+          <div class="modal-header">
+            <h3>Détails de la compétence - {{ selectedCompetence.nom }}</h3>
+            <button class="modal-close" (click)="showDetailsModal = false">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="detail-section">
+              <p><strong>Code:</strong> {{ selectedCompetence.code }}</p>
+              <p><strong>Catégorie:</strong> {{ getCategorieLabel(selectedCompetence.categorie) }}</p>
+              <p><strong>Niveau:</strong> {{ getNiveauLabel(selectedCompetence.niveau) }}</p>
+              <p *ngIf="selectedCompetence.description"><strong>Description:</strong> {{ selectedCompetence.description }}</p>
+              <p><strong>Employés maîtrisant:</strong> {{ selectedCompetence.employes_maitrisant.length }}</p>
+              <ul>
+                <li *ngFor="let eId of selectedCompetence.employes_maitrisant">{{ getEmployeNom(eId) }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal gestion employés -->
+      <div class="modal-overlay" *ngIf="showEmployesModal && currentCompetenceEmployes">
+        <div class="modal-container">
+          <div class="modal-header">
+            <h3>Gérer les employés - {{ currentCompetenceEmployes.nom }}</h3>
+            <button class="modal-close" (click)="showEmployesModal = false">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Ajouter un employé</label>
+              <select [(ngModel)]="newEmployeId">
+                <option [value]="null">Sélectionner</option>
+                <option *ngFor="let e of employes" [value]="e.id">{{ e.nom }} {{ e.prenom }}</option>
+              </select>
+              <button class="btn-add-small" (click)="addEmployeCompetence()">+ Ajouter</button>
+            </div>
+            <div class="employes-list">
+              <h4>Employés maîtrisant cette compétence ({{ currentCompetenceEmployes.employes_maitrisant.length }})</h4>
+              <div *ngFor="let eId of currentCompetenceEmployes.employes_maitrisant">
+                <div class="employe-item">
+                  <span>{{ getEmployeNom(eId) }}</span>
+                  <button class="remove-btn" (click)="removeEmployeCompetence(eId)">🗑️</button>
+                </div>
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button class="btn-primary" (click)="closeEmployesModal()">Fermer</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal suppression -->
+      <div class="modal-overlay" *ngIf="showDeleteModal">
+        <div class="modal-container small">
+          <div class="modal-header">
+            <h3>🗑️ Confirmer la suppression</h3>
+            <button class="modal-close" (click)="showDeleteModal = false">✕</button>
+          </div>
+          <div class="modal-body">
+            <p>Supprimer la compétence <strong>{{ competenceToDelete?.nom }}</strong> ?</p>
+            <div class="modal-actions">
+              <button class="btn-secondary" (click)="showDeleteModal = false">Annuler</button>
+              <button class="btn-danger" (click)="deleteCompetence()">🗑️ Supprimer</button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   `,
   styles: [`
-    .competences-container { padding: 24px; max-width: 1400px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .competences-container { padding: 24px; max-width: 1400px; margin: 0 auto; background: #F9FAFB; min-height: 100vh; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
     h1 { color: #1F2937; font-size: 28px; margin: 0; }
-    .subtitle { color: #6B7280; margin: 0; }
+    .subtitle { color: #6B7280; margin: 8px 0 0 0; }
     .header-actions { display: flex; gap: 12px; }
-    .btn-add, .btn-primary { background: #EC4899; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-    .btn-assign { background: #10B981; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-    .btn-add-competence { background: #FDF2F8; border: 2px solid #FCE7F3; border-radius: 8px; padding: 8px 16px; margin-top: 10px; cursor: pointer; color: #EC4899; width: 100%; }
-    .alert-success { background: #10B981; color: white; padding: 12px; border-radius: 8px; margin-bottom: 20px; }
-    .form-card { background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 1px solid #FCE7F3; }
-    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-    .full-width { grid-column: span 2; }
-    .form-group { display: flex; flex-direction: column; }
-    label { margin-bottom: 5px; color: #4B5563; }
-    input, textarea, select { padding: 10px; border: 2px solid #FCE7F3; border-radius: 8px; }
-    .form-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 30px; }
-    .btn-cancel { background: white; border: 2px solid #FCE7F3; border-radius: 8px; padding: 10px 20px; cursor: pointer; }
-    .btn-save { background: #EC4899; color: white; border: none; padding: 10px 30px; border-radius: 8px; cursor: pointer; }
-    .view-tabs { display: flex; gap: 10px; margin-bottom: 24px; }
-    .view-tabs button { background: none; border: 2px solid #FCE7F3; padding: 8px 16px; cursor: pointer; border-radius: 20px; color: #6B7280; }
-    .view-tabs button.active { background: #EC4899; color: white; border-color: #EC4899; }
-    .filters-bar { display: flex; gap: 15px; margin-bottom: 24px; flex-wrap: wrap; }
-    .search-box { flex: 2; background: white; border: 2px solid #FCE7F3; border-radius: 12px; padding: 8px 16px; display: flex; align-items: center; gap: 12px; }
+    .btn-add, .btn-primary, .btn-add-small { background: #EC4899; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+    .btn-add-small { padding: 5px 12px; font-size: 12px; }
+    .btn-add:hover, .btn-primary:hover, .btn-add-small:hover { background: #DB2777; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(236,72,153,0.3); }
+    .alert-success { background: #10B981; color: white; padding: 14px 20px; border-radius: 12px; margin-bottom: 20px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
+    .kpi-card { background: white; border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .kpi-icon { font-size: 32px; width: 56px; height: 56px; background: #FDF2F8; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+    .kpi-content { flex: 1; }
+    .kpi-value { display: block; font-size: 24px; font-weight: 700; color: #EC4899; }
+    .kpi-label { font-size: 13px; color: #6B7280; }
+    .filters-section { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; background: white; padding: 16px 20px; border-radius: 16px; }
+    .search-wrapper { flex: 2; display: flex; align-items: center; gap: 12px; background: #F9FAFB; border-radius: 12px; padding: 8px 16px; border: 1px solid #F3F4F6; }
     .search-icon { color: #9CA3AF; }
-    .search-box input { flex: 1; border: none; outline: none; }
-    .filter-select { flex: 1; padding: 8px 12px; border: 2px solid #FCE7F3; border-radius: 8px; background: white; }
-    .competences-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-    .competence-card { background: white; border-radius: 12px; padding: 20px; border: 1px solid #FCE7F3; }
-    .competence-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .competence-nom { font-weight: 600; color: #1F2937; }
-    .competence-categorie { font-size: 12px; padding: 4px 8px; background: #FDF2F8; border-radius: 4px; color: #EC4899; }
-    .competence-body p { margin: 5px 0; color: #6B7280; }
-    .description { font-size: 13px; color: #4B5563; }
-    .competence-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
-    .btn-icon { background: none; border: 1px solid #FCE7F3; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
-    .btn-icon.delete:hover { background: #FEE2E2; border-color: #EF4444; }
-    .employes-competences { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
-    .employe-card { background: white; border-radius: 12px; padding: 20px; border: 1px solid #FCE7F3; }
-    .employe-header { margin-bottom: 15px; }
-    .employe-nom { font-weight: 600; color: #1F2937; display: block; }
-    .employe-poste { font-size: 13px; color: #EC4899; }
-    .employe-competences-list { margin: 15px 0; }
-    .competence-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #FCE7F3; }
-    .comp-nom { font-size: 13px; }
-    .comp-niveau { width: 60%; }
-    .niveau-valeur { font-size: 11px; color: #6B7280; }
-    .niveau-bar { height: 6px; background: #FCE7F3; border-radius: 3px; margin-top: 2px; overflow: hidden; }
-    .niveau-fill { height: 100%; background: #EC4899; border-radius: 3px; }
-    .no-competence { text-align: center; color: #9CA3AF; padding: 10px; font-style: italic; }
-    .empty-state { text-align: center; padding: 60px; background: white; border-radius: 12px; border: 2px dashed #FCE7F3; }
+    .search-input { flex: 1; border: none; background: transparent; outline: none; }
+    .filter-group { display: flex; gap: 12px; flex: 2; flex-wrap: wrap; }
+    .filter-select { padding: 8px 16px; border: 1px solid #F3F4F6; border-radius: 10px; background: white; flex: 1; }
+    .competences-section { background: white; border-radius: 16px; padding: 20px; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .section-header h2 { margin: 0; font-size: 18px; }
+    .header-stats { display: flex; gap: 12px; }
+    .stat-badge { padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; background: #FEF3F9; color: #EC4899; }
+    .competences-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px; }
+    .competence-card { background: #F9FAFB; border-radius: 16px; padding: 20px; transition: 0.2s; border-left: 4px solid transparent; }
+    .competence-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .header-left { display: flex; gap: 12px; align-items: center; }
+    .competence-icon { font-size: 32px; width: 48px; height: 48px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+    .competence-code { font-size: 12px; color: #9CA3AF; font-family: monospace; }
+    .competence-nom { font-weight: 600; color: #1F2937; margin-top: 2px; }
+    .niveau-badge { font-size: 11px; padding: 4px 8px; border-radius: 20px; }
+    .niveau-badge.débutant { background: #F3F4F6; color: #6B7280; }
+    .niveau-badge.intermédiaire { background: #DBEAFE; color: #1E40AF; }
+    .niveau-badge.avancé { background: #FEF3C7; color: #D97706; }
+    .niveau-badge.expert { background: #DCFCE7; color: #16A34A; }
+    .card-body { margin: 16px 0; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+    .info-label { color: #6B7280; }
+    .info-value { font-weight: 500; color: #1F2937; }
+    .card-footer { display: flex; justify-content: flex-end; margin-top: 16px; padding-top: 16px; border-top: 1px solid #F3F4F6; }
+    .footer-actions { display: flex; gap: 8px; }
+    .action-icon { background: none; border: 1px solid #FCE7F3; border-radius: 8px; padding: 6px 12px; cursor: pointer; transition: 0.2s; font-size: 14px; }
+    .action-icon:hover { background: #FEF3F9; border-color: #EC4899; }
+    .action-icon.delete:hover { background: #FEE2E2; border-color: #EF4444; }
+    .empty-state { text-align: center; padding: 60px; background: white; border-radius: 16px; border: 2px dashed #FCE7F3; }
     .empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
-    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal-content { background: white; border-radius: 12px; padding: 30px; max-width: 400px; width: 90%; max-height: 80vh; overflow-y: auto; }
-    .modal-content.large { max-width: 800px; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .btn-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #6B7280; }
-    .attributions-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    .attributions-table th { background: #FDF2F8; padding: 8px; text-align: left; font-size: 12px; }
-    .attributions-table td { padding: 8px; border-bottom: 1px solid #FCE7F3; font-size: 13px; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px; }
-    .btn-delete { background: #EF4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+    .modal-container { background: white; border-radius: 20px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; animation: slideIn 0.2s ease; }
+    .modal-container.small { max-width: 450px; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #F3F4F6; }
+    .modal-header h3 { margin: 0; color: #EC4899; }
+    .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #9CA3AF; }
+    .modal-body { padding: 24px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .form-group { display: flex; flex-direction: column; margin-bottom: 16px; }
+    .form-group label { margin-bottom: 8px; color: #4B5563; font-weight: 500; font-size: 14px; }
+    .form-group input, .form-group textarea, .form-group select { padding: 12px; border: 2px solid #F3F4F6; border-radius: 10px; font-size: 14px; transition: border-color 0.2s; }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #EC4899; }
+    .employes-list { margin-top: 20px; }
+    .employe-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #F3F4F6; }
+    .remove-btn { background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0.6; }
+    .remove-btn:hover { opacity: 1; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+    .btn-secondary { background: white; border: 2px solid #F3F4F6; padding: 10px 24px; border-radius: 10px; cursor: pointer; font-weight: 500; }
+    .btn-danger { background: #EF4444; color: white; border: none; padding: 10px 24px; border-radius: 10px; cursor: pointer; font-weight: 500; }
+    .detail-section { margin: 8px 0; }
+    .detail-section p { margin: 8px 0; font-size: 14px; }
+    .detail-section ul { margin-top: 8px; padding-left: 20px; }
+    @media (max-width: 768px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .competences-grid { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; gap: 12px; } }
   `]
 })
 export class Competences implements OnInit {
-  employes: any[] = [];
   competences: Competence[] = [];
   filteredCompetences: Competence[] = [];
-  employeCompetences: EmployeCompetence[] = [];
-  selectedCompetence: Competence | null = null;
-  currentCompetence: any = {
-    nom: '',
-    categorie: 'technique',
-    description: '',
-    niveau_requis: 3
-  };
-  currentAttribution: any = {
-    employe_id: '',
-    competence_id: '',
-    niveau: 3,
-    date_obtention: new Date().toISOString().split('T')[0],
-    date_expiration: '',
-    certificat: '',
-    notes: ''
-  };
-  activeView = 'competences';
+  employes: any[] = [];
   searchTerm = '';
   categorieFilter = '';
-  showCompetenceForm = false;
-  showAssignForm = false;
-  editCompetenceMode = false;
-  showDeleteModal = false;
+  niveauFilter = '';
+  showForm = false;
   showDetailsModal = false;
-  deleteType: 'competence' | 'attribution' = 'competence';
-  itemToDelete: any = null;
+  showDeleteModal = false;
+  showEmployesModal = false;
+  editMode = false;
+  selectedCompetence: Competence | null = null;
+  competenceToDelete: Competence | null = null;
+  currentCompetenceEmployes: Competence | null = null;
+  newEmployeId: number | null = null;
   successMessage = '';
+
+  currentCompetence: Partial<Competence> = {
+    code: '',
+    nom: '',
+    categorie: 'technique',
+    niveau: 'intermédiaire',
+    employes_maitrisant: []
+  };
+
   ngOnInit() {
     this.loadEmployes();
     this.loadCompetences();
-    this.loadEmployeCompetences();
   }
+
   loadEmployes() {
     const saved = localStorage.getItem('effectifs');
     this.employes = saved ? JSON.parse(saved) : [];
   }
+
   loadCompetences() {
     const saved = localStorage.getItem('competences');
     this.competences = saved ? JSON.parse(saved) : [];
     this.filteredCompetences = [...this.competences];
   }
-  loadEmployeCompetences() {
-    const saved = localStorage.getItem('employe_competences');
-    this.employeCompetences = saved ? JSON.parse(saved) : [];
+
+  saveCompetences() {
+    localStorage.setItem('competences', JSON.stringify(this.competences));
   }
+
+  openForm() {
+    this.currentCompetence = {
+      code: this.generateCode(),
+      nom: '',
+      description: '',
+      categorie: 'technique',
+      niveau: 'intermédiaire',
+      employes_maitrisant: []
+    };
+    this.editMode = false;
+    this.showForm = true;
+  }
+
+  generateCode(): string {
+    const count = this.competences.length + 1;
+    return `COMP-${String(count).padStart(4, '0')}`;
+  }
+
   saveCompetence() {
-    if (this.editCompetenceMode) {
+    if (!this.currentCompetence.code || !this.currentCompetence.nom) {
+      alert('Le code et le nom sont requis');
+      return;
+    }
+
+    if (this.editMode && this.currentCompetence.id) {
       const index = this.competences.findIndex(c => c.id === this.currentCompetence.id);
       if (index !== -1) {
-        this.competences[index] = { ...this.currentCompetence };
-        this.showSuccess('Compétence modifiée !');
+        this.competences[index] = { ...this.currentCompetence, updated_at: new Date().toISOString() } as Competence;
+        this.showSuccess('Compétence modifiée');
       }
     } else {
-      const newCompetence = { ...this.currentCompetence, id: Date.now() };
-      this.competences.push(newCompetence);
-      this.showSuccess('Compétence ajoutée !');
+      this.competences.push({
+        ...this.currentCompetence,
+        id: Date.now(),
+        created_at: new Date().toISOString()
+      } as Competence);
+      this.showSuccess('Compétence ajoutée');
     }
-    localStorage.setItem('competences', JSON.stringify(this.competences));
+    this.saveCompetences();
     this.filterCompetences();
-    this.cancelCompetenceForm();
+    this.cancelForm();
   }
-  onCompetenceChange() {
-    const comp = this.competences.find(c => c.id === this.currentAttribution.competence_id);
-    if (comp && comp.niveau_requis) {
-      this.currentAttribution.niveau = comp.niveau_requis;
-    }
-  }
-  saveAttribution() {
-    const comp = this.competences.find(c => c.id === this.currentAttribution.competence_id);
-    const newAttribution = { 
-      ...this.currentAttribution, 
-      id: Date.now(),
-      competence_nom: comp?.nom
-    };
-    this.employeCompetences.push(newAttribution);
-    localStorage.setItem('employe_competences', JSON.stringify(this.employeCompetences));
-    this.showSuccess('Compétence attribuée !');
-    this.showAssignForm = false;
-    this.resetAttributionForm();
-  }
-  assignToEmploye(e: any) {
-    this.currentAttribution.employe_id = e.id;
-    this.showAssignForm = true;
-  }
+
   editCompetence(c: Competence) {
     this.currentCompetence = { ...c };
-    this.editCompetenceMode = true;
-    this.showCompetenceForm = true;
+    this.editMode = true;
+    this.showForm = true;
   }
-  viewCompetenceDetails(c: Competence) {
+
+  gererEmployes(c: Competence) {
+    this.currentCompetenceEmployes = c;
+    this.showEmployesModal = true;
+  }
+
+  addEmployeCompetence() {
+    if (this.currentCompetenceEmployes && this.newEmployeId) {
+      if (!this.currentCompetenceEmployes.employes_maitrisant.includes(this.newEmployeId)) {
+        this.currentCompetenceEmployes.employes_maitrisant.push(this.newEmployeId);
+        this.saveCompetences();
+        this.showSuccess('Employé ajouté');
+      }
+      this.newEmployeId = null;
+    }
+  }
+
+  removeEmployeCompetence(employeId: number) {
+    if (this.currentCompetenceEmployes) {
+      this.currentCompetenceEmployes.employes_maitrisant = this.currentCompetenceEmployes.employes_maitrisant.filter(id => id !== employeId);
+      this.saveCompetences();
+      this.showSuccess('Employé retiré');
+    }
+  }
+
+  getEmployeNom(id: number): string {
+    const employe = this.employes.find(e => e.id === id);
+    return employe ? `${employe.nom} ${employe.prenom}` : 'Inconnu';
+  }
+
+  closeEmployesModal() {
+    this.showEmployesModal = false;
+    this.currentCompetenceEmployes = null;
+  }
+
+  viewDetails(c: Competence) {
     this.selectedCompetence = c;
     this.showDetailsModal = true;
   }
-  getEmployeCompetences(employeId: number): EmployeCompetence[] {
-    return this.employeCompetences.filter(ec => ec.employe_id === employeId);
-  }
-  getAttributionsForCompetence(competenceId: number): EmployeCompetence[] {
-    return this.employeCompetences.filter(ec => ec.competence_id === competenceId);
-  }
-  getEmployesCountForCompetence(competenceId: number): number {
-    return this.employeCompetences.filter(ec => ec.competence_id === competenceId).length;
-  }
-  getEmployeName(employeId: number): string {
-    const emp = this.employes.find(e => e.id === employeId);
-    return emp ? `${emp.nom} ${emp.prenom}` : '';
-  }
-  confirmDeleteCompetence(c: Competence) {
-    this.deleteType = 'competence';
-    this.itemToDelete = c;
+
+  confirmDelete(c: Competence) {
+    this.competenceToDelete = c;
     this.showDeleteModal = true;
   }
-  confirmDelete() {
-    if (this.deleteType === 'competence' && this.itemToDelete) {
-      this.competences = this.competences.filter(c => c.id !== this.itemToDelete.id);
-      this.employeCompetences = this.employeCompetences.filter(ec => ec.competence_id !== this.itemToDelete.id);
-      localStorage.setItem('competences', JSON.stringify(this.competences));
-      localStorage.setItem('employe_competences', JSON.stringify(this.employeCompetences));
+
+  deleteCompetence() {
+    if (this.competenceToDelete) {
+      this.competences = this.competences.filter(c => c.id !== this.competenceToDelete?.id);
+      this.saveCompetences();
       this.filterCompetences();
-      this.showSuccess('Compétence supprimée !');
+      this.showDeleteModal = false;
+      this.competenceToDelete = null;
+      this.showSuccess('Compétence supprimée');
     }
-    this.showDeleteModal = false;
-    this.itemToDelete = null;
   }
-  cancelCompetenceForm() {
-    this.currentCompetence = {
-      nom: '',
-      categorie: 'technique',
-      description: '',
-      niveau_requis: 3
-    };
-    this.showCompetenceForm = false;
-    this.editCompetenceMode = false;
+
+  cancelForm() {
+    this.showForm = false;
+    this.editMode = false;
   }
-  resetAttributionForm() {
-    this.currentAttribution = {
-      employe_id: '',
-      competence_id: '',
-      niveau: 3,
-      date_obtention: new Date().toISOString().split('T')[0],
-      date_expiration: '',
-      certificat: '',
-      notes: ''
-    };
-  }
+
   filterCompetences() {
-    let filtered = this.competences;
+    let filtered = [...this.competences];
     if (this.searchTerm) {
       const term = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(c => 
+      filtered = filtered.filter(c =>
         c.nom?.toLowerCase().includes(term) ||
+        c.code?.toLowerCase().includes(term) ||
         c.description?.toLowerCase().includes(term)
       );
     }
     if (this.categorieFilter) {
       filtered = filtered.filter(c => c.categorie === this.categorieFilter);
     }
+    if (this.niveauFilter) {
+      filtered = filtered.filter(c => c.niveau === this.niveauFilter);
+    }
     this.filteredCompetences = filtered;
   }
+
+  getEmployesCompetents(): number {
+    const allEmployes = new Set<number>();
+    this.competences.forEach(c => {
+      c.employes_maitrisant.forEach(e => allEmployes.add(e));
+    });
+    return allEmployes.size;
+  }
+
+  getCompetencesTechniques(): number {
+    return this.competences.filter(c => c.categorie === 'technique').length;
+  }
+
+  getSoftSkills(): number {
+    return this.competences.filter(c => c.categorie === 'soft_skill').length;
+  }
+
+  getCategorieIcon(categorie: string): string {
+    const icons: any = {
+      technique: '🔧',
+      soft_skill: '🗣️',
+      langue: '🌍',
+      certification: '📜'
+    };
+    return icons[categorie] || '💡';
+  }
+
+  getCategorieLabel(categorie: string): string {
+    const labels: any = {
+      technique: 'Technique',
+      soft_skill: 'Soft skill',
+      langue: 'Langue',
+      certification: 'Certification'
+    };
+    return labels[categorie] || categorie;
+  }
+
+  getNiveauLabel(niveau: string): string {
+    const labels: any = {
+      débutant: '🌱 Débutant',
+      intermédiaire: '📘 Intermédiaire',
+      avancé: '🚀 Avancé',
+      expert: '🏆 Expert'
+    };
+    return labels[niveau] || niveau;
+  }
+
   showSuccess(msg: string) {
     this.successMessage = msg;
     setTimeout(() => this.successMessage = '', 3000);

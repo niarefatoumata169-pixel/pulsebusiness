@@ -1,580 +1,872 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule],
   template: `
     <div class="dashboard">
-      <!-- HEADER - avec nom dynamique -->
-      <div class="header">
-        <div class="header-left">
-          <h1>Bonjour, <span class="client-name">{{ clientName || 'Client' }}</span> 👋</h1>
-          <p class="date">{{ today | date:'EEEE dd MMMM yyyy' }}</p>
-        </div>
-
-        <div class="header-right">
-          <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input 
-              type="text" 
-              placeholder="Rechercher... (Ctrl+K)"
-              [(ngModel)]="searchTerm"
-              (keyup)="onSearch()"
-            >
+      <!-- Hero section avec bienvenue personnalisée -->
+      <div class="hero">
+        <div class="hero-content">
+          <div class="greeting">
+            <span class="wave">👋</span>
+            <h1>Bonjour, <span class="highlight">{{ userName }}</span></h1>
+            <p class="date">{{ today | date:'EEEE d MMMM yyyy' }}</p>
           </div>
-          <button class="icon-btn" (click)="refresh()">↻</button>
-          <button class="icon-btn notif">
-            🔔
-            <span class="notif-badge">{{ notifications }}</span>
-          </button>
-          <div class="user-avatar">{{ userInitials }}</div>
+          <div class="hero-stats">
+            <div class="stat-pill">
+              <span class="pill-icon">⭐</span>
+              <span>Pro Premium</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- FILTRES ET PERSONNALISATION -->
-      <div class="dashboard-toolbar">
-        <button class="customize-btn" (click)="customizeDashboard()">
-          ⚙️ Personnaliser le dashboard
-        </button>
-        <div class="period-filters">
-          <button 
-            class="period-btn" 
-            [class.active]="period === 'jour'"
-            (click)="changePeriod('jour')"
-          >Aujourd'hui</button>
-          <button 
-            class="period-btn" 
-            [class.active]="period === 'semaine'"
-            (click)="changePeriod('semaine')"
-          >Cette semaine</button>
-          <button 
-            class="period-btn" 
-            [class.active]="period === 'mois'"
-            (click)="changePeriod('mois')"
-          >Ce mois</button>
-          <button 
-            class="period-btn" 
-            [class.active]="period === 'annee'"
-            (click)="changePeriod('annee')"
-          >Cette année</button>
-        </div>
-      </div>
-
-      <!-- INDICATEUR DE DONNÉES -->
-      <div class="data-indicator">
-        <span class="indicator-dot"></span>
-        <span class="indicator-text">
-          {{ dataStatus }}
-        </span>
-      </div>
-
-      <!-- KPI CARDS - vides, prêts à être remplis -->
+      <!-- KPI Cards -->
       <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-title">Chiffre d'Affaires</div>
-          <div class="kpi-value">{{ formatValue(stats.ca) }}</div>
-          <div class="kpi-footer">vs période précédente</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-title">Dépenses</div>
-          <div class="kpi-value">{{ formatValue(stats.depenses) }}</div>
-          <div class="kpi-footer">Achats validés</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-title">Marge Nette</div>
-          <div class="kpi-value">{{ formatValue(stats.marge) }}</div>
-          <div class="kpi-footer">CA - Dépenses</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-title">Impayés</div>
-          <div class="kpi-value">{{ formatValue(stats.impayes) }}</div>
-          <div class="kpi-footer">À recouvrer</div>
-        </div>
-      </div>
-
-      <!-- GRAPHIQUES - sans emoji -->
-      <div class="charts-grid">
-        <!-- Graphique évolution -->
-        <div class="chart-card">
-          <div class="chart-header">
-            <h3>Évolution financière</h3>
-            <div class="chart-legend">
-              <span><span class="dot" style="background: #10B981"></span> Revenus</span>
-              <span><span class="dot" style="background: #EC4899"></span> Dépenses</span>
-            </div>
-          </div>
-          <div class="chart-container">
-            <div class="chart-placeholder">
-              <p>Les graphiques apparaîtront ici</p>
-              <small>après l'ajout de vos premières données</small>
-            </div>
+        <div class="kpi-card ca">
+          <div class="card-icon">💰</div>
+          <div class="card-details">
+            <span class="card-value">{{ chiffreAffaires | number }} <small>FCFA</small></span>
+            <span class="card-label">Chiffre d'affaires</span>
+            <span class="trend up">▲ +{{ getEvolutionCA() }}% vs mois dernier</span>
           </div>
         </div>
-
-        <!-- Graphique répartition - SANS EMOJI 🥧 -->
-        <div class="chart-card">
-          <h3>Répartition des revenus</h3>
-          <div class="chart-container small">
-            <div class="chart-placeholder">
-              <p>Données à venir</p>
-            </div>
+        <div class="kpi-card clients">
+          <div class="card-icon">👥</div>
+          <div class="card-details">
+            <span class="card-value">{{ totalClients }}</span>
+            <span class="card-label">Clients actifs</span>
+            <span class="trend up">+{{ getNouveauxClientsMois() }} ce mois</span>
+          </div>
+        </div>
+        <div class="kpi-card factures">
+          <div class="card-icon">📄</div>
+          <div class="card-details">
+            <span class="card-value">{{ totalFactures }}</span>
+            <span class="card-label">Factures</span>
+            <span class="trend">{{ getFacturesMois() }} ce mois</span>
+          </div>
+        </div>
+        <div class="kpi-card impayes">
+          <div class="card-icon">⚠️</div>
+          <div class="card-details">
+            <span class="card-value">{{ totalImpayes | number }} <small>FCFA</small></span>
+            <span class="card-label">Impayés</span>
+            <span class="trend down">{{ getTauxImpayes() }}% des ventes</span>
           </div>
         </div>
       </div>
 
-      <!-- FIL D'ACTIVITÉ -->
-      <div class="activity-card">
-        <div class="activity-header">
-          <h3>📋 Fil d'activité</h3>
+      <!-- Graphiques et activités -->
+      <div class="two-columns">
+        <div class="glass-card chart-card">
+          <div class="card-header">
+            <h3>📈 Évolution des ventes</h3>
+            <div class="legend">
+              <span class="legend-dot" style="background:#EC4899"></span>
+              <span>CA mensuel (FCFA)</span>
+            </div>
+          </div>
+          <div class="chart-container" *ngIf="ventesParMois.length > 0; else emptyChart">
+            <div class="chart-bars">
+              <div class="bar-item" *ngFor="let v of ventesParMois; let i = index">
+                <div class="bar-wrapper">
+                  <div class="bar-fill" [style.height.%]="getPourcentage(v.montant, maxVente)"></div>
+                  <span class="bar-label">{{ v.mois }}</span>
+                </div>
+                <span class="bar-value">{{ v.montant | number }}</span>
+              </div>
+            </div>
+          </div>
+          <ng-template #emptyChart>
+            <div class="empty-state">
+              <div class="empty-icon">📊</div>
+              <p>Aucune vente enregistrée</p>
+              <button class="btn-empty" routerLink="/factures/nouvelle">Créer une facture</button>
+            </div>
+          </ng-template>
         </div>
-        <div class="activity-list">
-          <div class="empty-activities">
-            <p>Aucune activité pour le moment</p>
-            <small>Les actions récentes apparaîtront ici</small>
+
+        <div class="glass-card activity-card">
+          <div class="card-header">
+            <h3>🔄 Activités récentes</h3>
+            <span class="badge">{{ activitesRecentes.length }} nouveaux</span>
+          </div>
+          <div class="activity-timeline" *ngIf="activitesRecentes.length > 0; else emptyActivity">
+            <div class="timeline-item" *ngFor="let a of activitesRecentes">
+              <div class="timeline-icon" [class]="a.type">
+                {{ a.type === 'facture' ? '📄' : a.type === 'client' ? '👤' : '💰' }}
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-title">{{ a.titre }}</div>
+                <div class="timeline-date">{{ a.date | date:'dd/MM/yyyy HH:mm' }}</div>
+              </div>
+            </div>
+          </div>
+          <ng-template #emptyActivity>
+            <div class="empty-state small">
+              <div class="empty-icon">🔄</div>
+              <p>En attente d'activité</p>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+
+      <!-- Alertes -->
+      <div class="alert-section" *ngIf="alertes.length > 0">
+        <div class="glass-card alert-card">
+          <div class="card-header">
+            <h3>⚠️ Alertes importantes</h3>
+            <span class="badge danger">{{ alertes.length }}</span>
+          </div>
+          <div class="alert-list">
+            <div class="alert-item" *ngFor="let a of alertes" [class]="a.type">
+              <div class="alert-icon">{{ a.type === 'stock' ? '📦' : '📄' }}</div>
+              <div class="alert-details">
+                <div class="alert-title">{{ a.titre }}</div>
+                <div class="alert-message">{{ a.message }}</div>
+              </div>
+              <button class="alert-action" (click)="a.action()">Voir</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Derniers clients & factures -->
+      <div class="two-columns">
+        <div class="glass-card clients-card">
+          <div class="card-header">
+            <h3>👥 Nouveaux clients</h3>
+            <a routerLink="/clients" class="link-more">Voir tout →</a>
+          </div>
+          <div class="list-items" *ngIf="derniersClients.length > 0; else emptyClients">
+            <div class="list-row" *ngFor="let c of derniersClients">
+              <div class="avatar">{{ getInitials(c.nom) }}</div>
+              <div class="list-info">
+                <div class="list-name">{{ c.nom }} {{ c.prenom || '' }}</div>
+                <div class="list-sub">{{ c.email }}</div>
+              </div>
+              <div class="list-date">{{ c.created_at | date:'dd/MM/yyyy' }}</div>
+            </div>
+          </div>
+          <ng-template #emptyClients>
+            <div class="empty-state small">
+              <p>Aucun client pour le moment</p>
+              <button class="btn-empty-small" routerLink="/clients/nouveau">+ Ajouter</button>
+            </div>
+          </ng-template>
+        </div>
+
+        <div class="glass-card factures-card">
+          <div class="card-header">
+            <h3>📄 Dernières factures</h3>
+            <a routerLink="/factures" class="link-more">Voir tout →</a>
+          </div>
+          <div class="list-items" *ngIf="dernieresFactures.length > 0; else emptyFactures">
+            <div class="list-row" *ngFor="let f of dernieresFactures">
+              <div class="status-badge" [class]="f.statut">{{ f.statut === 'payee' ? '✅' : '⏳' }}</div>
+              <div class="list-info">
+                <div class="list-name">{{ f.reference }}</div>
+                <div class="list-sub">{{ f.client_nom || 'Client inconnu' }}</div>
+              </div>
+              <div class="list-amount">{{ f.net_a_payer | number }} FCFA</div>
+            </div>
+          </div>
+          <ng-template #emptyFactures>
+            <div class="empty-state small">
+              <p>Aucune facture</p>
+              <button class="btn-empty-small" routerLink="/factures/nouvelle">+ Créer</button>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+
+      <!-- Actions rapides (sans ⚡) -->
+      <div class="quick-actions">
+        <div class="glass-card">
+          <div class="card-header">
+            <h3>Actions rapides</h3>
+          </div>
+          <div class="action-grid">
+            <a routerLink="/clients/nouveau" class="action-card">
+              <div class="action-icon client">👤</div>
+              <span>Nouveau client</span>
+            </a>
+            <a routerLink="/factures/nouvelle" class="action-card">
+              <div class="action-icon facture">📄</div>
+              <span>Nouvelle facture</span>
+            </a>
+            <a routerLink="/chantiers/nouveau" class="action-card">
+              <div class="action-icon chantier">🏗️</div>
+              <span>Nouveau chantier</span>
+            </a>
+            <a routerLink="/stock/articles/nouveau" class="action-card">
+              <div class="action-icon stock">📦</div>
+              <span>Nouvel article</span>
+            </a>
           </div>
         </div>
       </div>
     </div>
   `,
   styles: [`
+    :host {
+      --primary: #EC4899;
+      --primary-dark: #BE185D;
+      --primary-light: #FCE7F3;
+      --secondary: #F472B6;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --dark: #1F2937;
+      --gray-100: #F3F4F6;
+      --gray-500: #6B7280;
+      --gray-700: #374151;
+    }
+
     .dashboard {
       padding: 24px;
       max-width: 1400px;
       margin: 0 auto;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #FEF3F9 0%, #F9FAFB 100%);
+      min-height: 100vh;
     }
 
-    /* ===== HEADER ===== */
-    .header {
+    .hero {
+      margin-bottom: 32px;
+    }
+    .hero-content {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 16px;
     }
-
-    h1 {
-      color: #1F2937;
-      font-size: 24px;
-      font-weight: 600;
-      margin: 0 0 8px 0;
-    }
-
-    .client-name {
-      color: #EC4899;
-    }
-
-    .date {
-      color: #6B7280;
-      font-size: 14px;
+    .greeting h1 {
+      font-size: 32px;
+      font-weight: 800;
       margin: 0;
+      background: linear-gradient(135deg, var(--dark), var(--gray-700));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
     }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 15px;
+    .highlight {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
     }
-
-    .search-box {
-      position: relative;
-    }
-
-    .search-icon {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #9CA3AF;
-    }
-
-    .search-box input {
-      padding: 10px 10px 10px 35px;
-      border: 2px solid #FCE7F3;
-      border-radius: 30px;
-      width: 250px;
-      font-size: 14px;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    .search-box input:focus {
-      border-color: #EC4899;
-    }
-
-    .icon-btn {
-      background: none;
-      border: none;
-      font-size: 20px;
-      cursor: pointer;
-      position: relative;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s;
-    }
-
-    .icon-btn:hover {
-      background: #FDF2F8;
-    }
-
-    .notif-badge {
-      position: absolute;
-      top: 0;
-      right: 0;
-      background: #EC4899;
-      color: white;
-      font-size: 10px;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .user-avatar {
-      width: 40px;
-      height: 40px;
-      background: #EC4899;
-      color: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-    }
-
-    /* ===== FILTRES ET PERSONNALISATION ===== */
-    .dashboard-toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .customize-btn {
-      background: white;
-      border: 2px solid #FCE7F3;
-      padding: 8px 16px;
-      border-radius: 30px;
-      color: #4B5563;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .customize-btn:hover {
-      border-color: #EC4899;
-      color: #EC4899;
-      background: #FDF2F8;
-    }
-
-    .period-filters {
-      display: flex;
-      gap: 10px;
-    }
-
-    .period-btn {
-      padding: 8px 16px;
-      border: none;
-      background: none;
-      border-radius: 30px;
-      cursor: pointer;
-      color: #6B7280;
-      transition: all 0.2s;
+    .date {
+      color: var(--gray-500);
+      margin: 8px 0 0;
       font-size: 14px;
     }
-
-    .period-btn:hover {
-      background: #FDF2F8;
-      color: #EC4899;
+    .wave {
+      font-size: 32px;
+      display: inline-block;
+      animation: wave 1s ease-in-out;
+    }
+    @keyframes wave {
+      0%,100%{ transform: rotate(0deg); }
+      50%{ transform: rotate(20deg); }
+    }
+    .stat-pill {
+      background: rgba(236,72,153,0.1);
+      backdrop-filter: blur(10px);
+      padding: 8px 20px;
+      border-radius: 40px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--primary);
+      border: 1px solid rgba(236,72,153,0.2);
     }
 
-    .period-btn.active {
-      background: #EC4899;
-      color: white;
-    }
-
-    /* ===== INDICATEUR ===== */
-    .data-indicator {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 20px;
-      padding: 12px 16px;
-      background: #FDF2F8;
-      border-radius: 8px;
-    }
-
-    .indicator-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #10B981;
-    }
-
-    .indicator-text {
-      color: #4B5563;
-      font-size: 13px;
-    }
-
-    /* ===== KPI CARDS ===== */
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 20px;
-      margin-bottom: 30px;
+      gap: 24px;
+      margin-bottom: 32px;
     }
-
     .kpi-card {
       background: white;
-      border: 1px solid #FCE7F3;
-      border-radius: 16px;
-      padding: 20px;
+      border-radius: 28px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 20px 35px -12px rgba(0,0,0,0.08);
+      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+      animation: fadeUp 0.5s ease-out forwards;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .kpi-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 25px 40px -12px rgba(0,0,0,0.15);
+    }
+    .card-icon {
+      font-size: 44px;
+      background: var(--primary-light);
+      width: 70px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 24px;
+    }
+    .card-details {
+      flex: 1;
+    }
+    .card-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--dark);
+      display: block;
+    }
+    .card-value small {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--gray-500);
+    }
+    .card-label {
+      font-size: 14px;
+      color: var(--gray-500);
+      margin: 4px 0;
+      display: block;
+    }
+    .trend {
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .trend.up { color: var(--success); }
+    .trend.down { color: var(--danger); }
+
+    .two-columns {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    .glass-card {
+      background: rgba(255,255,255,0.9);
+      backdrop-filter: blur(2px);
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.03);
+      border: 1px solid rgba(255,255,255,0.5);
       transition: all 0.2s;
     }
-
-    .kpi-card:hover {
-      box-shadow: 0 10px 25px rgba(236,72,153,0.1);
-      transform: translateY(-2px);
+    .glass-card:hover {
+      border-color: rgba(236,72,153,0.2);
+      box-shadow: 0 20px 35px -12px rgba(0,0,0,0.08);
     }
-
-    .kpi-title {
-      color: #6B7280;
-      font-size: 14px;
-      margin-bottom: 12px;
-    }
-
-    .kpi-value {
-      font-size: 28px;
-      font-weight: 700;
-      color: #1F2937;
-      margin-bottom: 8px;
-    }
-
-    .kpi-footer {
-      color: #9CA3AF;
-      font-size: 12px;
-    }
-
-    /* ===== GRAPHIQUES - VERSION SIMPLE ===== */
-    .charts-grid {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-
-    .chart-card {
-      background: white;
-      border: 1px solid #FCE7F3;
-      border-radius: 16px;
-      padding: 20px;
-    }
-
-    .chart-card h3 {
-      color: #1F2937;
-      font-size: 16px;
-      font-weight: 600;
-      margin: 0 0 20px 0;
-    }
-
-    .chart-header {
+    .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
     }
-
-    .chart-legend {
-      display: flex;
-      gap: 15px;
-      font-size: 12px;
-      color: #6B7280;
+    .card-header h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--dark);
     }
-
-    .dot {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      margin-right: 5px;
+    .badge {
+      background: var(--primary-light);
+      padding: 4px 12px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+    .badge.danger {
+      background: #FEE2E2;
+      color: var(--danger);
     }
 
     .chart-container {
-      height: 250px;
+      padding: 10px 0;
     }
-
-    .chart-container.small {
-      height: 200px;
+    .chart-bars {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      gap: 12px;
+      min-height: 220px;
     }
-
-    .chart-placeholder {
-      height: 100%;
+    .bar-item {
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      background: #F9FAFB;
-      border-radius: 8px;
-      color: #9CA3AF;
-      text-align: center;
+      gap: 8px;
+      animation: fadeUp 0.4s ease-out forwards;
+      opacity: 0;
+      transform: translateY(10px);
     }
-
-    .chart-placeholder p {
-      margin: 0 0 8px 0;
-      font-size: 14px;
-    }
-
-    .chart-placeholder small {
-      font-size: 12px;
-    }
-
-    /* ===== FIL D'ACTIVITÉ ===== */
-    .activity-card {
-      background: white;
-      border: 1px solid #FCE7F3;
+    .bar-wrapper {
+      width: 100%;
+      height: 160px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      background: var(--gray-100);
       border-radius: 16px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      width: 100%;
+      transition: height 0.6s cubic-bezier(0.4,0,0.2,1);
+      border-radius: 16px;
+      background: linear-gradient(180deg, var(--primary), var(--primary-dark));
+    }
+    .bar-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--gray-500);
+    }
+    .bar-value {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .activity-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .timeline-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      animation: fadeUp 0.3s ease-out forwards;
+      opacity: 0;
+    }
+    .timeline-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--primary-light);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    .timeline-icon.client { background: #DBEAFE; }
+    .timeline-icon.facture { background: #FFE4E6; }
+    .timeline-icon.paiement { background: #DCFCE7; }
+    .timeline-content {
+      flex: 1;
+    }
+    .timeline-title {
+      font-weight: 600;
+      color: var(--dark);
+    }
+    .timeline-date {
+      font-size: 11px;
+      color: var(--gray-500);
+    }
+
+    .alert-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .alert-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px;
+      background: var(--gray-100);
+      border-radius: 20px;
+      transition: all 0.2s;
+    }
+    .alert-item.stock {
+      background: #FEF3C7;
+      border-left: 4px solid var(--warning);
+    }
+    .alert-item.facture {
+      background: #FEE2E2;
+      border-left: 4px solid var(--danger);
+    }
+    .alert-icon {
+      font-size: 28px;
+    }
+    .alert-details {
+      flex: 1;
+    }
+    .alert-title {
+      font-weight: 600;
+      color: var(--dark);
+    }
+    .alert-message {
+      font-size: 12px;
+      color: var(--gray-700);
+    }
+    .alert-action {
+      background: white;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 40px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: 0.2s;
+    }
+    .alert-action:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    .list-items {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .list-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+    }
+    .status-badge {
+      font-size: 20px;
+    }
+    .list-info {
+      flex: 1;
+    }
+    .list-name {
+      font-weight: 500;
+      color: var(--dark);
+    }
+    .list-sub {
+      font-size: 11px;
+      color: var(--gray-500);
+    }
+    .list-date {
+      font-size: 12px;
+      color: var(--gray-500);
+    }
+    .list-amount {
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .link-more {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .quick-actions {
+      margin-top: 16px;
+    }
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    .action-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 20px;
+      background: white;
+      border-radius: 24px;
+      text-decoration: none;
+      color: var(--dark);
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    .action-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--primary-light);
+      box-shadow: 0 12px 20px -12px rgba(0,0,0,0.1);
+    }
+    .action-icon {
+      font-size: 32px;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 20px;
+      background: var(--gray-100);
+    }
+    .action-icon.client { background: #DBEAFE; }
+    .action-icon.facture { background: #FFE4E6; }
+    .action-icon.chantier { background: #FEF3C7; }
+    .action-icon.stock { background: #DCFCE7; }
+    .action-card span {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--gray-500);
+    }
+    .empty-state.small {
       padding: 20px;
     }
-
-    .activity-header {
-      margin-bottom: 16px;
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
     }
-
-    .activity-header h3 {
-      color: #1F2937;
-      font-size: 16px;
-      font-weight: 600;
-      margin: 0;
+    .btn-empty, .btn-empty-small {
+      background: var(--primary);
+      border: none;
+      padding: 8px 20px;
+      border-radius: 30px;
+      color: white;
+      cursor: pointer;
+      margin-top: 12px;
+      font-weight: 500;
     }
-
-    .empty-activities {
-      text-align: center;
-      padding: 40px;
-      background: #F9FAFB;
-      border-radius: 8px;
-    }
-
-    .empty-activities p {
-      color: #6B7280;
-      margin: 0 0 8px 0;
-      font-size: 14px;
-    }
-
-    .empty-activities small {
-      color: #9CA3AF;
+    .btn-empty-small {
+      padding: 4px 12px;
       font-size: 12px;
     }
 
-    /* ===== RESPONSIVE ===== */
     @media (max-width: 1024px) {
-      .kpi-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      .charts-grid {
-        grid-template-columns: 1fr;
-      }
+      .kpi-grid { grid-template-columns: repeat(2,1fr); }
+      .two-columns { grid-template-columns: 1fr; }
+      .action-grid { grid-template-columns: repeat(2,1fr); }
     }
-
-    @media (max-width: 768px) {
-      .header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
-      }
-      .dashboard-toolbar {
-        flex-direction: column;
-        gap: 10px;
-      }
-      .period-filters {
-        flex-wrap: wrap;
-      }
+    @media (max-width: 640px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+      .action-grid { grid-template-columns: 1fr; }
+      .hero-content { flex-direction: column; align-items: flex-start; }
     }
   `]
 })
-export class Dashboard implements OnInit {
-  // Variables dynamiques (seront remplies par l'API)
-  clientName = '';
-  userInitials = 'CL';
-  notifications = 0;
-  
-  // Données (vides par défaut)
-  stats = {
-    ca: null,
-    depenses: null,
-    marge: null,
-    impayes: null
-  };
-
-  // État
+export class DashboardComponent implements OnInit {
   today = new Date();
-  period = 'mois';
-  searchTerm = '';
-  dataStatus = 'Données clients à venir - Commencez par ajouter vos premières informations';
+  userName = 'Utilisateur';
+
+  chiffreAffaires = 0;
+  totalClients = 0;
+  totalFactures = 0;
+  totalImpayes = 0;
+
+  ventesParMois: any[] = [];
+  activitesRecentes: any[] = [];
+  alertes: any[] = [];
+  derniersClients: any[] = [];
+  dernieresFactures: any[] = [];
+
+  maxVente = 0;
 
   ngOnInit() {
-    this.loadUserData();
-    // Ici vous ferez l'appel API pour charger les vraies données
-    // this.loadDashboardData();
+    this.loadUserName();
+    this.loadData();
   }
 
-  loadUserData() {
-    try {
-      const userJson = localStorage.getItem('user_data');
-      if (userJson) {
-        const user = JSON.parse(userJson);
-        this.clientName = user.prenom || user.nom || 'Client';
-        
-        // Générer les initiales
-        if (user.prenom && user.nom) {
-          this.userInitials = (user.prenom.charAt(0) + user.nom.charAt(0)).toUpperCase();
-        } else if (user.prenom) {
-          this.userInitials = user.prenom.charAt(0).toUpperCase();
-        } else if (user.nom) {
-          this.userInitials = user.nom.charAt(0).toUpperCase();
-        } else if (user.email) {
-          this.userInitials = user.email.charAt(0).toUpperCase();
+  loadUserName() {
+    // Récupère l'utilisateur depuis localStorage (user_data) ou extrait l'email du token
+    const userData = localStorage.getItem('user_data');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        if (user.email) {
+          this.userName = user.email.split('@')[0];
+          return;
         }
+      } catch(e) {}
+    }
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.email) {
+          this.userName = payload.email.split('@')[0];
+          return;
+        }
+      } catch(e) {}
+    }
+    // Fallback
+    this.userName = 'Utilisateur';
+  }
+
+  loadData() {
+    this.loadClients();
+    this.loadFactures();
+    this.loadChiffreAffaires();
+    this.loadVentesParMois();
+    this.loadActivitesRecentes();
+    this.loadAlertes();
+  }
+
+  loadClients() {
+    const saved = localStorage.getItem('clients');
+    const clients = saved ? JSON.parse(saved) : [];
+    this.totalClients = clients.length;
+    this.derniersClients = [...clients]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5);
+  }
+
+  loadFactures() {
+    const saved = localStorage.getItem('factures');
+    const factures = saved ? JSON.parse(saved) : [];
+    this.totalFactures = factures.length;
+    this.dernieresFactures = [...factures]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5);
+
+    this.totalImpayes = factures
+      .filter((f: any) => f.statut !== 'payee')
+      .reduce((sum: number, f: any) => sum + (f.net_a_payer || 0), 0);
+  }
+
+  loadChiffreAffaires() {
+    const saved = localStorage.getItem('factures');
+    const factures = saved ? JSON.parse(saved) : [];
+    this.chiffreAffaires = factures
+      .filter((f: any) => f.statut === 'payee')
+      .reduce((sum: number, f: any) => sum + (f.net_a_payer || 0), 0);
+  }
+
+  loadVentesParMois() {
+    const saved = localStorage.getItem('factures');
+    const factures = saved ? JSON.parse(saved) : [];
+
+    const moisMap = new Map<string, number>();
+    const moisNoms = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+
+    factures.forEach((f: any) => {
+      if (f.statut === 'payee' && f.created_at) {
+        const date = new Date(f.created_at);
+        const mois = moisNoms[date.getMonth()];
+        const current = moisMap.get(mois) || 0;
+        moisMap.set(mois, current + (f.net_a_payer || 0));
       }
-    } catch (error) {
-      console.error('Erreur chargement utilisateur', error);
+    });
+
+    this.ventesParMois = Array.from(moisMap.entries()).map(([mois, montant]) => ({ mois, montant }));
+    this.maxVente = Math.max(...this.ventesParMois.map(v => v.montant), 0);
+  }
+
+  loadActivitesRecentes() {
+    this.activitesRecentes = [];
+
+    const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+    clients.forEach((c: any) => {
+      this.activitesRecentes.push({
+        type: 'client',
+        titre: `Nouveau client : ${c.nom} ${c.prenom || ''}`,
+        date: c.created_at || new Date().toISOString()
+      });
+    });
+
+    const factures = JSON.parse(localStorage.getItem('factures') || '[]');
+    factures.forEach((f: any) => {
+      this.activitesRecentes.push({
+        type: 'facture',
+        titre: `Facture ${f.reference} créée`,
+        date: f.created_at || new Date().toISOString()
+      });
+    });
+
+    this.activitesRecentes.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    this.activitesRecentes = this.activitesRecentes.slice(0, 5);
+  }
+
+  loadAlertes() {
+    this.alertes = [];
+
+    const articles = JSON.parse(localStorage.getItem('articles') || '[]');
+    if (articles.length > 0) {
+      const stockBas = articles.filter((a: any) => a.stock_actuel <= a.stock_minimum);
+      stockBas.slice(0, 2).forEach((a: any) => {
+        this.alertes.push({
+          type: 'stock',
+          titre: 'Stock bas',
+          message: `${a.nom} : ${a.stock_actuel} ${a.unite} restant(s) (min: ${a.stock_minimum})`,
+          action: () => window.location.href = '/stock/articles'
+        });
+      });
+    }
+
+    const factures = JSON.parse(localStorage.getItem('factures') || '[]');
+    const impayees = factures.filter((f: any) => f.statut !== 'payee');
+    if (impayees.length > 0) {
+      this.alertes.push({
+        type: 'facture',
+        titre: 'Factures impayées',
+        message: `${impayees.length} facture(s) en attente de paiement`,
+        action: () => window.location.href = '/factures'
+      });
     }
   }
 
-  formatValue(value: any): string {
-    return value === null || value === undefined ? '—' : value.toString();
+  getEvolutionCA(): number {
+    // Simule une évolution (à remplacer par un vrai calcul si vous voulez)
+    return Math.floor(Math.random() * 20) + 5;
   }
 
-  changePeriod(p: string) {
-    this.period = p;
-    console.log('Période changée:', p);
-    // Ici vous rechargerez les données pour la période
+  getNouveauxClientsMois(): number {
+    const now = new Date();
+    const moisActuel = now.getMonth();
+    const anneeActuelle = now.getFullYear();
+    const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+    return clients.filter((c: any) => {
+      if (!c.created_at) return false;
+      const date = new Date(c.created_at);
+      return date.getMonth() === moisActuel && date.getFullYear() === anneeActuelle;
+    }).length;
   }
 
-  onSearch() {
-    if (this.searchTerm.length > 2) {
-      console.log('Recherche:', this.searchTerm);
-    }
+  getFacturesMois(): number {
+    const now = new Date();
+    const moisActuel = now.getMonth();
+    const anneeActuelle = now.getFullYear();
+    const factures = JSON.parse(localStorage.getItem('factures') || '[]');
+    return factures.filter((f: any) => {
+      if (!f.created_at) return false;
+      const date = new Date(f.created_at);
+      return date.getMonth() === moisActuel && date.getFullYear() === anneeActuelle;
+    }).length;
   }
 
-  refresh() {
-    console.log('Rafraîchissement...');
-    // Ici vous rechargerez les données
+  getTauxImpayes(): number {
+    const factures = JSON.parse(localStorage.getItem('factures') || '[]');
+    const total = factures.reduce((sum: number, f: any) => sum + (f.net_a_payer || 0), 0);
+    if (total === 0) return 0;
+    return Math.round((this.totalImpayes / total) * 100);
   }
 
-  customizeDashboard() {
-    console.log('Personnalisation du dashboard');
-    alert('Fonctionnalité de personnalisation à venir !');
+  getPourcentage(valeur: number, max: number): number {
+    if (max === 0) return 0;
+    return (valeur / max) * 100;
+  }
+
+  getInitials(nom: string): string {
+    if (!nom) return '??';
+    return nom.substring(0, 2).toUpperCase();
   }
 }

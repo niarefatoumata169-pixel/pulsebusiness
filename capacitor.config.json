@@ -1,0 +1,6 @@
+{
+  "appId": "com.pulsebusiness.app",
+  "appName": "PulseBusiness",
+  "webDir": "dist/pulsebusiness/browser",
+  "bundledWebRuntime": false
+}

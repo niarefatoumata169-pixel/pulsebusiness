@@ -1,17 +1,22 @@
 import { Routes } from '@angular/router';
-import { AccueilComponent } from './accueil.component';
-import { LoginComponent } from './login/login.component';
-import { RegisterComponent } from './register/register.component';
-import { Dashboard } from './features/dashboard/dashboard';
+import { DashboardComponent } from './features/dashboard/dashboard';
 import { MainLayoutComponent } from './layouts/main-layout.component';
 import { authGuard } from './auth/auth-guard';
 
+// ===== PAGES PUBLIQUES =====
+import { AccueilComponent } from './features/accueil/accueil';
+import { LoginComponent } from './features/login/login';
+import { RegisterComponent } from './features/register/register';
+
+// ===== PARTENAIRES ===
+import { Partenariats } from './features/partenariats/partenariats';
+
 // ===== CLIENTS =====
 import { Clients } from './features/clients/clients';
+import { NouveauClient } from './features/clients/nouveau/nouveau';
 
 // ===== FACTURES =====
 import { Factures } from './features/factures/factures';
-import { NouvelleFacture } from './factures/nouvelle-facture/nouvelle-facture';
 
 // ===== CHANTIERS =====
 import { Chantiers } from './features/chantiers/chantiers';
@@ -20,16 +25,13 @@ import { NouveauChantier } from './features/chantiers/nouveau/nouveau';
 // ===== COMMERCIAL =====
 import { CommercialDashboard } from './features/commercial/commercial-dashboard';
 import { Devis } from './features/commercial/devis/devis';
-import { NouveauDevis } from './features/commercial/devis/nouveau-devis';
-import { Ventes } from './features/commercial/ventes';
-import { NouvelleVente } from './features/commercial/nouvelle-vente';
-import { Contrats } from './features/commercial/contrats';
-import { NouveauContrat } from './features/commercial/nouveau-contrat';
-import { Recouvrement as CommercialRecouvrement } from './features/commercial/recouvrement';
+import { Contrats } from './features/commercial/contrats/contrats';
+import { Recouvrements } from './features/commercial/recouvrement/recouvrement';
+import { Ventes } from './features/pointdevente/ventes';
 
 // ===== FINANCE =====
 import { FinanceDashboard } from './features/finance/finance-dashboard';
-import { Recouvrement } from './features/finance/recouvrement';
+import { Recouvrement as FinanceRecouvrement } from './features/finance/recouvrement';
 import { Tresorerie } from './features/finance/tresorerie';
 import { Banque } from './features/finance/banque';
 import { Caisse } from './features/finance/caisse';
@@ -67,7 +69,7 @@ import { Trajets } from './features/transport/trajets';
 import { NouveauTrajet } from './features/transport/nouveau-trajet';
 import { Maintenance } from './features/transport/maintenance';
 import { NouvelleMaintenance } from './features/transport/nouvelle-maintenance';
-import { Carburant } from './features/transport/carburant';
+import { Carburants } from './features/transport/carburant';
 import { NouveauCarburant } from './features/transport/nouveau-carburant';
 
 // ===== ADMINISTRATION =====
@@ -99,44 +101,35 @@ import { NouveauReglement } from './features/international/nouveau-reglement';
 import { Parametres } from './features/parametres/parametres';
 import { Profil } from './features/profil/profil';
 
+// ===== CALENDRIER =====
+import { CalendarComponent } from './features/calendar/calendar.component';
+
 export const routes: Routes = [
-  // Page d'accueil publique
+  // Routes publiques
   { path: '', component: AccueilComponent },
-  
-  // Autres pages publiques
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
 
-  // Pages avec layout (protégées)
+  // Routes protégées
   {
     path: '',
     component: MainLayoutComponent,
     canActivate: [authGuard],
     children: [
-      { path: 'dashboard', component: Dashboard },
+      { path: 'dashboard', component: DashboardComponent },
       { path: 'clients', component: Clients },
-      
-      // Factures
+      { path: 'partenariats', component: Partenariats },
+      { path: 'clients/nouveau', component: NouveauClient },
       { path: 'factures', component: Factures },
-      { path: 'factures/nouvelle', component: NouvelleFacture },
-      
-      // Chantiers
       { path: 'chantiers', component: Chantiers },
       { path: 'chantiers/nouveau', component: NouveauChantier },
-
-      // Commercial
       { path: 'commercial/dashboard', component: CommercialDashboard },
       { path: 'commercial/devis', component: Devis },
-      { path: 'commercial/devis/nouveau', component: NouveauDevis },
       { path: 'commercial/ventes', component: Ventes },
-      { path: 'commercial/ventes/nouvelle', component: NouvelleVente },
       { path: 'commercial/contrats', component: Contrats },
-      { path: 'commercial/contrats/nouveau', component: NouveauContrat },
-      { path: 'commercial/recouvrement', component: CommercialRecouvrement },
-
-      // Finance
+      { path: 'commercial/recouvrement', component: Recouvrements },
       { path: 'finance/dashboard', component: FinanceDashboard },
-      { path: 'finance/recouvrement', component: Recouvrement },
+      { path: 'finance/recouvrement', component: FinanceRecouvrement },
       { path: 'finance/tresorerie', component: Tresorerie },
       { path: 'finance/banque', component: Banque },
       { path: 'finance/caisse', component: Caisse },
@@ -144,8 +137,6 @@ export const routes: Routes = [
       { path: 'finance/od', component: Od },
       { path: 'finance/budgets', component: Budgets },
       { path: 'finance/comptabilite', component: Comptabilite },
-
-      // RH
       { path: 'rh/dashboard', component: RhDashboard },
       { path: 'rh/effectifs', component: Effectifs },
       { path: 'rh/paie', component: Paie },
@@ -155,16 +146,12 @@ export const routes: Routes = [
       { path: 'rh/formations', component: Formations },
       { path: 'rh/evaluations', component: Evaluations },
       { path: 'rh/competences', component: Competences },
-
-      // Stock
       { path: 'stock/dashboard', component: StockDashboard },
       { path: 'stock/articles', component: Articles },
       { path: 'stock/categories', component: Categories },
       { path: 'stock/mouvements', component: Mouvements },
       { path: 'stock/inventaire', component: Inventaire },
       { path: 'stock/fournisseurs', component: Fournisseurs },
-
-      // Transport
       { path: 'transport/dashboard', component: TransportDashboard },
       { path: 'transport/vehicules', component: Vehicules },
       { path: 'transport/vehicules/nouveau', component: NouveauVehicule },
@@ -174,24 +161,18 @@ export const routes: Routes = [
       { path: 'transport/trajets/nouveau', component: NouveauTrajet },
       { path: 'transport/maintenance', component: Maintenance },
       { path: 'transport/maintenance/nouveau', component: NouvelleMaintenance },
-      { path: 'transport/carburant', component: Carburant },
+      { path: 'transport/carburant', component: Carburants },
       { path: 'transport/carburant/nouveau', component: NouveauCarburant },
-
-      // Administration
       { path: 'administration/dashboard', component: AdminDashboard },
       { path: 'administration/entites', component: Entites },
       { path: 'administration/filiales', component: Filiales },
       { path: 'administration/departements', component: Departements },
       { path: 'administration/postes', component: Postes },
-
-      // Production
       { path: 'production/dashboard', component: ProductionDashboard },
       { path: 'production/equipements', component: Equipements },
       { path: 'production/plannings', component: Plannings },
       { path: 'production/ordres', component: Ordres },
       { path: 'production/qualite', component: Qualite },
-
-      // International
       { path: 'international/dashboard', component: InternationalDashboard },
       { path: 'international/douanes', component: Douanes },
       { path: 'international/douanes/nouvelle', component: NouvelleDeclaration },
@@ -201,13 +182,11 @@ export const routes: Routes = [
       { path: 'international/incoterms/nouveau', component: NouvelIncoterm },
       { path: 'international/reglements', component: Reglements },
       { path: 'international/reglements/nouveau', component: NouveauReglement },
-
-      // Paramètres
       { path: 'parametres', component: Parametres },
-      { path: 'profil', component: Profil }
+      { path: 'profil', component: Profil },
+      { path: 'calendar', component: CalendarComponent } // Nouvelle route pour le calendrier
     ]
   },
 
-  // Redirection 404
-  { path: '**', redirectTo: '' }
+  { path: '**', redirectTo: '/dashboard' }
 ];

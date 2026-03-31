@@ -5,22 +5,19 @@ import { FormsModule } from '@angular/forms';
 
 interface Candidature {
   id?: number;
+  reference: string;
   poste: string;
-  nom: string;
-  prenom: string;
-  email: string;
-  telephone: string;
-  adresse?: string;
-  date_naissance?: string;
+  candidat_nom: string;
+  candidat_email: string;
+  candidat_telephone?: string;
   date_candidature: string;
-  cv?: string;
-  lettre_motivation?: string;
-  diplomes?: string;
-  experience?: number;
-  competences?: string;
+  statut: 'nouvelle' | 'en_cours' | 'entretien' | 'acceptee' | 'refusee';
   source?: string;
-  statut: 'nouvelle' | 'en_cours' | 'entretien' | 'test' | 'acceptee' | 'refusee';
+  cv_url?: string;
+  lettre_url?: string;
   notes?: string;
+  created_at: string;
+  updated_at?: string;
 }
 
 @Component({
@@ -31,325 +28,325 @@ interface Candidature {
     <div class="candidatures-container">
       <div class="header">
         <div>
-          <h1>Candidatures</h1>
-          <p class="subtitle">{{ candidatures.length }} candidature(s)</p>
+          <h1>📝 Gestion des candidatures</h1>
+          <p class="subtitle">{{ candidatures.length }} candidature(s) • {{ getNouvelles() }} nouvelle(s)</p>
         </div>
-        <button class="btn-add" (click)="showForm = !showForm">+ Nouvelle candidature</button>
+        <div class="header-actions">
+          <button class="btn-add" (click)="openForm()">+ Nouvelle candidature</button>
+        </div>
       </div>
 
-      <!-- Message de succès -->
-      <div *ngIf="successMessage" class="alert-success">✅ {{ successMessage }}</div>
+      <div *ngIf="successMessage" class="alert-success">{{ successMessage }}</div>
 
-      <!-- Formulaire d'ajout -->
-      <div class="form-card" *ngIf="showForm">
-        <h3>{{ editMode ? 'Modifier' : 'Nouvelle' }} candidature</h3>
-        <form (ngSubmit)="saveCandidature()" #candidatureForm="ngForm">
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Poste *</label>
-              <input type="text" [(ngModel)]="currentCandidature.poste" name="poste" required>
-            </div>
-            <div class="form-group">
-              <label>Nom *</label>
-              <input type="text" [(ngModel)]="currentCandidature.nom" name="nom" required>
-            </div>
-            <div class="form-group">
-              <label>Prénom *</label>
-              <input type="text" [(ngModel)]="currentCandidature.prenom" name="prenom" required>
-            </div>
-            <div class="form-group">
-              <label>Email *</label>
-              <input type="email" [(ngModel)]="currentCandidature.email" name="email" required email>
-            </div>
-            <div class="form-group">
-              <label>Téléphone</label>
-              <input type="tel" [(ngModel)]="currentCandidature.telephone" name="telephone">
-            </div>
-            <div class="form-group">
-              <label>Date naissance</label>
-              <input type="date" [(ngModel)]="currentCandidature.date_naissance" name="date_naissance">
-            </div>
-            <div class="form-group">
-              <label>Date candidature</label>
-              <input type="date" [(ngModel)]="currentCandidature.date_candidature" name="date_candidature">
-            </div>
-            <div class="form-group">
-              <label>Source</label>
-              <select [(ngModel)]="currentCandidature.source" name="source">
-                <option value="">Sélectionner</option>
-                <option value="linkedin">LinkedIn</option>
-                <option value="indeed">Indeed</option>
-                <option value="site">Site web</option>
-                <option value="recommandation">Recommandation</option>
-                <option value="autre">Autre</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Expérience (années)</label>
-              <input type="number" [(ngModel)]="currentCandidature.experience" name="experience" min="0" step="0.5">
-            </div>
-            <div class="form-group full-width">
-              <label>Adresse</label>
-              <textarea [(ngModel)]="currentCandidature.adresse" name="adresse" rows="2"></textarea>
-            </div>
-            <div class="form-group full-width">
-              <label>CV (URL ou lien)</label>
-              <input type="text" [(ngModel)]="currentCandidature.cv" name="cv">
-            </div>
-            <div class="form-group full-width">
-              <label>Lettre de motivation (URL ou lien)</label>
-              <input type="text" [(ngModel)]="currentCandidature.lettre_motivation" name="lettre_motivation">
-            </div>
-            <div class="form-group full-width">
-              <label>Diplômes / Formations</label>
-              <textarea [(ngModel)]="currentCandidature.diplomes" name="diplomes" rows="3" placeholder="Listez vos diplômes..."></textarea>
-            </div>
-            <div class="form-group full-width">
-              <label>Compétences</label>
-              <textarea [(ngModel)]="currentCandidature.competences" name="competences" rows="3" placeholder="Séparez par des virgules"></textarea>
-            </div>
-            <div class="form-group">
-              <label>Statut</label>
-              <select [(ngModel)]="currentCandidature.statut" name="statut">
-                <option value="nouvelle">Nouvelle</option>
-                <option value="en_cours">En cours</option>
-                <option value="entretien">Entretien</option>
-                <option value="test">Test technique</option>
-                <option value="acceptee">Acceptée</option>
-                <option value="refusee">Refusée</option>
-              </select>
-            </div>
-            <div class="form-group full-width">
-              <label>Notes</label>
-              <textarea [(ngModel)]="currentCandidature.notes" name="notes" rows="3"></textarea>
-            </div>
+      <div class="kpi-grid" *ngIf="candidatures.length > 0">
+        <div class="kpi-card">
+          <div class="kpi-icon">📝</div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ candidatures.length }}</span>
+            <span class="kpi-label">Total</span>
           </div>
-          <div class="form-actions">
-            <button type="button" class="btn-cancel" (click)="cancelForm()">Annuler</button>
-            <button type="submit" class="btn-save" [disabled]="candidatureForm.invalid">💾 Enregistrer</button>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">🆕</div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ getNouvelles() }}</span>
+            <span class="kpi-label">Nouvelles</span>
           </div>
-        </form>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">🗣️</div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ getEnEntretien() }}</span>
+            <span class="kpi-label">En entretien</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">✅</div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ getAcceptees() }}</span>
+            <span class="kpi-label">Acceptées</span>
+          </div>
+        </div>
       </div>
 
-      <!-- Filtres -->
-      <div class="filters-bar" *ngIf="candidatures.length > 0">
-        <div class="search-box">
+      <div class="filters-section" *ngIf="candidatures.length > 0">
+        <div class="search-wrapper">
           <span class="search-icon">🔍</span>
-          <input [(ngModel)]="searchTerm" (ngModelChange)="filterCandidatures()" placeholder="Rechercher...">
+          <input [(ngModel)]="searchTerm" (ngModelChange)="filterCandidatures()" placeholder="Rechercher par nom, poste..." class="search-input">
         </div>
-        <select [(ngModel)]="posteFilter" (ngModelChange)="filterCandidatures()" class="filter-select">
-          <option value="">Tous postes</option>
-          <option *ngFor="let p of postes" [value]="p">{{ p }}</option>
-        </select>
-        <select [(ngModel)]="statutFilter" (ngModelChange)="filterCandidatures()" class="filter-select">
-          <option value="">Tous statuts</option>
-          <option value="nouvelle">Nouvelle</option>
-          <option value="en_cours">En cours</option>
-          <option value="entretien">Entretien</option>
-          <option value="test">Test</option>
-          <option value="acceptee">Acceptée</option>
-          <option value="refusee">Refusée</option>
-        </select>
+        <div class="filter-group">
+          <select [(ngModel)]="statutFilter" (ngModelChange)="filterCandidatures()" class="filter-select">
+            <option value="">Tous statuts</option>
+            <option value="nouvelle">🆕 Nouvelle</option>
+            <option value="en_cours">🔄 En cours</option>
+            <option value="entretien">🗣️ Entretien</option>
+            <option value="acceptee">✅ Acceptée</option>
+            <option value="refusee">❌ Refusée</option>
+          </select>
+        </div>
       </div>
 
-      <!-- Tableau -->
-      <div class="table-container" *ngIf="candidatures.length > 0; else emptyState">
-        <table class="candidatures-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Poste</th>
-              <th>Candidat</th>
-              <th>Email</th>
-              <th>Téléphone</th>
-              <th>Expérience</th>
-              <th>Statut</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let c of filteredCandidatures">
-              <td>{{ c.date_candidature | date:'dd/MM/yyyy' }}</td>
-              <td>{{ c.poste }}</td>
-              <td>{{ c.nom }} {{ c.prenom }}</td>
-              <td>{{ c.email }}</td>
-              <td>{{ c.telephone || '-' }}</td>
-              <td>{{ c.experience || 0 }} ans</td>
-              <td><span class="badge" [class]="c.statut">{{ getStatutLabel(c.statut) }}</span></td>
-              <td class="actions">
-                <button class="btn-icon" (click)="viewDetails(c)" title="Voir détails">👁️</button>
-                <button class="btn-icon" (click)="editCandidature(c)" title="Modifier">✏️</button>
-                <button class="btn-icon delete" (click)="confirmDelete(c)" title="Supprimer">🗑️</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="candidatures-section" *ngIf="candidatures.length > 0; else emptyState">
+        <div class="section-header">
+          <h2>📋 Liste des candidatures</h2>
+          <div class="header-stats">
+            <span class="stat-badge">{{ filteredCandidatures.length }} / {{ candidatures.length }} affiché(s)</span>
+          </div>
+        </div>
+        <div class="candidatures-grid">
+          <div class="candidature-card" *ngFor="let c of filteredCandidatures" [class]="c.statut">
+            <div class="card-header">
+              <div class="header-left">
+                <div class="candidature-icon">📝</div>
+                <div class="candidature-info">
+                  <div class="candidature-ref">{{ c.reference }}</div>
+                  <div class="candidature-nom">{{ c.candidat_nom }}</div>
+                  <div class="candidature-poste">{{ c.poste }}</div>
+                </div>
+              </div>
+              <div class="header-right">
+                <span class="statut-badge" [class]="c.statut">{{ getStatutLabel(c.statut) }}</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="info-row">
+                <span class="info-label">📧 Email:</span>
+                <span class="info-value">{{ c.candidat_email }}</span>
+              </div>
+              <div class="info-row" *ngIf="c.candidat_telephone">
+                <span class="info-label">📞 Tél:</span>
+                <span class="info-value">{{ c.candidat_telephone }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">📅 Candidature:</span>
+                <span class="info-value">{{ c.date_candidature | date:'dd/MM/yyyy' }}</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <div class="footer-actions">
+                <button class="action-icon" (click)="viewDetails(c)" title="Voir détails">👁️</button>
+                <button class="action-icon" (click)="editCandidature(c)" title="Modifier">✏️</button>
+                <button class="action-icon" (click)="changerStatut(c, 'entretien')" *ngIf="c.statut !== 'entretien' && c.statut !== 'acceptee' && c.statut !== 'refusee'" title="Passer en entretien">🗣️</button>
+                <button class="action-icon" (click)="changerStatut(c, 'acceptee')" *ngIf="c.statut !== 'acceptee' && c.statut !== 'refusee'" title="Accepter">✅</button>
+                <button class="action-icon" (click)="changerStatut(c, 'refusee')" *ngIf="c.statut !== 'acceptee' && c.statut !== 'refusee'" title="Refuser">❌</button>
+                <button class="action-icon delete" (click)="confirmDelete(c)" title="Supprimer">🗑️</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- État vide -->
       <ng-template #emptyState>
         <div class="empty-state">
           <div class="empty-icon">📝</div>
           <h2>Aucune candidature</h2>
-          <p>Ajoutez votre première candidature</p>
-          <button class="btn-primary" (click)="showForm = true">+ Nouvelle candidature</button>
+          <p>Enregistrez votre première candidature</p>
+          <button class="btn-primary" (click)="openForm()">+ Nouvelle candidature</button>
         </div>
       </ng-template>
 
-      <!-- Modal de détails -->
-      <div class="modal" *ngIf="showDetailsModal">
-        <div class="modal-content large">
+      <!-- Modal formulaire -->
+      <div class="modal-overlay" *ngIf="showForm">
+        <div class="modal-container">
           <div class="modal-header">
-            <h3>Détails de la candidature</h3>
-            <button class="btn-close" (click)="showDetailsModal = false">✕</button>
+            <h3>{{ editMode ? '✏️ Modifier' : '➕ Nouvelle' }} candidature</h3>
+            <button class="modal-close" (click)="cancelForm()">✕</button>
           </div>
-          <div class="modal-body" *ngIf="selectedCandidature">
-            <div class="details-grid">
-              <div class="detail-section">
-                <h4>Informations personnelles</h4>
-                <p><strong>Nom complet:</strong> {{ selectedCandidature.nom }} {{ selectedCandidature.prenom }}</p>
-                <p><strong>Email:</strong> {{ selectedCandidature.email }}</p>
-                <p><strong>Téléphone:</strong> {{ selectedCandidature.telephone || '-' }}</p>
-                <p><strong>Date naissance:</strong> {{ selectedCandidature.date_naissance | date }}</p>
-                <p><strong>Adresse:</strong> {{ selectedCandidature.adresse || '-' }}</p>
+          <div class="modal-body">
+            <form (ngSubmit)="saveCandidature()">
+              <div class="form-group">
+                <label>Référence</label>
+                <input type="text" [(ngModel)]="currentCandidature.reference" readonly class="readonly">
               </div>
-              <div class="detail-section">
-                <h4>Poste & Expérience</h4>
-                <p><strong>Poste visé:</strong> {{ selectedCandidature.poste }}</p>
-                <p><strong>Date candidature:</strong> {{ selectedCandidature.date_candidature | date }}</p>
-                <p><strong>Expérience:</strong> {{ selectedCandidature.experience || 0 }} ans</p>
-                <p><strong>Source:</strong> {{ selectedCandidature.source || '-' }}</p>
+              <div class="form-group">
+                <label>Poste *</label>
+                <input type="text" [(ngModel)]="currentCandidature.poste" required>
               </div>
-              <div class="detail-section full-width">
-                <h4>Compétences</h4>
-                <p>{{ selectedCandidature.competences || '-' }}</p>
+              <div class="form-group">
+                <label>Nom du candidat *</label>
+                <input type="text" [(ngModel)]="currentCandidature.candidat_nom" required>
               </div>
-              <div class="detail-section full-width">
-                <h4>Diplômes / Formations</h4>
-                <p>{{ selectedCandidature.diplomes || '-' }}</p>
+              <div class="form-group">
+                <label>Email *</label>
+                <input type="email" [(ngModel)]="currentCandidature.candidat_email" required>
               </div>
-              <div class="detail-section full-width">
-                <h4>Documents</h4>
-                <p *ngIf="selectedCandidature.cv"><a [href]="selectedCandidature.cv" target="_blank">📄 Voir CV</a></p>
-                <p *ngIf="selectedCandidature.lettre_motivation"><a [href]="selectedCandidature.lettre_motivation" target="_blank">📝 Voir lettre de motivation</a></p>
-                <p *ngIf="!selectedCandidature.cv && !selectedCandidature.lettre_motivation">Aucun document</p>
+              <div class="form-group">
+                <label>Téléphone</label>
+                <input type="tel" [(ngModel)]="currentCandidature.candidat_telephone">
               </div>
-              <div class="detail-section full-width">
-                <h4>Notes</h4>
-                <p>{{ selectedCandidature.notes || '-' }}</p>
+              <div class="form-group">
+                <label>Date de candidature</label>
+                <input type="date" [(ngModel)]="currentCandidature.date_candidature">
               </div>
+              <div class="form-group">
+                <label>Source (LinkedIn, site web...)</label>
+                <input type="text" [(ngModel)]="currentCandidature.source">
+              </div>
+              <div class="form-group">
+                <label>Statut</label>
+                <select [(ngModel)]="currentCandidature.statut">
+                  <option value="nouvelle">🆕 Nouvelle</option>
+                  <option value="en_cours">🔄 En cours</option>
+                  <option value="entretien">🗣️ Entretien</option>
+                  <option value="acceptee">✅ Acceptée</option>
+                  <option value="refusee">❌ Refusée</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Notes</label>
+                <textarea [(ngModel)]="currentCandidature.notes" rows="3"></textarea>
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="btn-secondary" (click)="cancelForm()">Annuler</button>
+                <button type="submit" class="btn-primary">💾 Enregistrer</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal détails -->
+      <div class="modal-overlay" *ngIf="showDetailsModal && selectedCandidature">
+        <div class="modal-container">
+          <div class="modal-header">
+            <h3>Détails de la candidature - {{ selectedCandidature.reference }}</h3>
+            <button class="modal-close" (click)="showDetailsModal = false">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="detail-section">
+              <p><strong>Poste:</strong> {{ selectedCandidature.poste }}</p>
+              <p><strong>Candidat:</strong> {{ selectedCandidature.candidat_nom }}</p>
+              <p><strong>Email:</strong> {{ selectedCandidature.candidat_email }}</p>
+              <p><strong>Téléphone:</strong> {{ selectedCandidature.candidat_telephone || '-' }}</p>
+              <p><strong>Date:</strong> {{ selectedCandidature.date_candidature | date:'dd/MM/yyyy' }}</p>
+              <p><strong>Source:</strong> {{ selectedCandidature.source || '-' }}</p>
+              <p><strong>Statut:</strong> {{ getStatutLabel(selectedCandidature.statut) }}</p>
+              <p *ngIf="selectedCandidature.notes"><strong>Notes:</strong> {{ selectedCandidature.notes }}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Modal de confirmation suppression -->
-      <div class="modal" *ngIf="showDeleteModal">
-        <div class="modal-content">
-          <h3>Confirmer la suppression</h3>
-          <p>Supprimer la candidature de <strong>{{ candidatureToDelete?.nom }} {{ candidatureToDelete?.prenom }}</strong> ?</p>
-          <div class="modal-actions">
-            <button class="btn-cancel" (click)="showDeleteModal = false">Annuler</button>
-            <button class="btn-delete" (click)="deleteCandidature()">🗑️ Supprimer</button>
+      <!-- Modal suppression -->
+      <div class="modal-overlay" *ngIf="showDeleteModal">
+        <div class="modal-container small">
+          <div class="modal-header">
+            <h3>🗑️ Confirmer la suppression</h3>
+            <button class="modal-close" (click)="showDeleteModal = false">✕</button>
+          </div>
+          <div class="modal-body">
+            <p>Supprimer la candidature de <strong>{{ candidatureToDelete?.candidat_nom }}</strong> ?</p>
+            <div class="modal-actions">
+              <button class="btn-secondary" (click)="showDeleteModal = false">Annuler</button>
+              <button class="btn-danger" (click)="deleteCandidature()">🗑️ Supprimer</button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   `,
   styles: [`
-    .candidatures-container { padding: 24px; max-width: 1400px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .candidatures-container { padding: 24px; max-width: 1400px; margin: 0 auto; background: #F9FAFB; min-height: 100vh; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
     h1 { color: #1F2937; font-size: 28px; margin: 0; }
-    .subtitle { color: #6B7280; margin: 0; }
-    .btn-add, .btn-primary { background: #EC4899; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-    .alert-success { background: #10B981; color: white; padding: 12px; border-radius: 8px; margin-bottom: 20px; }
-    
-    .form-card { background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 1px solid #FCE7F3; }
-    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-    .full-width { grid-column: span 2; }
-    .form-group { display: flex; flex-direction: column; }
-    label { margin-bottom: 5px; color: #4B5563; }
-    input, textarea, select { padding: 10px; border: 2px solid #FCE7F3; border-radius: 8px; }
-    .form-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 30px; }
-    .btn-cancel { background: white; border: 2px solid #FCE7F3; border-radius: 8px; padding: 10px 20px; cursor: pointer; }
-    .btn-save { background: #EC4899; color: white; border: none; padding: 10px 30px; border-radius: 8px; cursor: pointer; }
-    
-    .filters-bar { display: flex; gap: 15px; margin-bottom: 24px; flex-wrap: wrap; }
-    .search-box { flex: 2; background: white; border: 2px solid #FCE7F3; border-radius: 12px; padding: 8px 16px; display: flex; align-items: center; gap: 12px; }
+    .subtitle { color: #6B7280; margin: 8px 0 0 0; }
+    .header-actions { display: flex; gap: 12px; }
+    .btn-add, .btn-primary { background: #EC4899; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+    .btn-add:hover, .btn-primary:hover { background: #DB2777; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(236,72,153,0.3); }
+    .alert-success { background: #10B981; color: white; padding: 14px 20px; border-radius: 12px; margin-bottom: 20px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
+    .kpi-card { background: white; border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .kpi-icon { font-size: 32px; width: 56px; height: 56px; background: #FDF2F8; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+    .kpi-content { flex: 1; }
+    .kpi-value { display: block; font-size: 24px; font-weight: 700; color: #EC4899; }
+    .kpi-label { font-size: 13px; color: #6B7280; }
+    .filters-section { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; background: white; padding: 16px 20px; border-radius: 16px; }
+    .search-wrapper { flex: 2; display: flex; align-items: center; gap: 12px; background: #F9FAFB; border-radius: 12px; padding: 8px 16px; border: 1px solid #F3F4F6; }
     .search-icon { color: #9CA3AF; }
-    .search-box input { flex: 1; border: none; outline: none; }
-    .filter-select { flex: 1; padding: 8px 12px; border: 2px solid #FCE7F3; border-radius: 8px; background: white; }
-    
-    .table-container { background: white; border-radius: 12px; overflow: auto; }
-    .candidatures-table { width: 100%; border-collapse: collapse; }
-    .candidatures-table th { background: #FDF2F8; padding: 12px; text-align: left; }
-    .candidatures-table td { padding: 12px; border-bottom: 1px solid #FCE7F3; }
-    
-    .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
-    .badge.nouvelle { background: #EC4899; color: white; }
-    .badge.en_cours { background: #F59E0B; color: white; }
-    .badge.entretien { background: #10B981; color: white; }
-    .badge.test { background: #3B82F6; color: white; }
-    .badge.acceptee { background: #10B981; color: white; }
-    .badge.refusee { background: #EF4444; color: white; }
-    
-    .actions { display: flex; gap: 8px; }
-    .btn-icon { background: none; border: 1px solid #FCE7F3; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
-    .btn-icon.delete:hover { background: #FEE2E2; border-color: #EF4444; }
-    
-    .empty-state { text-align: center; padding: 60px; background: white; border-radius: 12px; border: 2px dashed #FCE7F3; }
+    .search-input { flex: 1; border: none; background: transparent; outline: none; }
+    .filter-group { display: flex; gap: 12px; flex: 1; }
+    .filter-select { padding: 8px 16px; border: 1px solid #F3F4F6; border-radius: 10px; background: white; flex: 1; }
+    .candidatures-section { background: white; border-radius: 16px; padding: 20px; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .section-header h2 { margin: 0; font-size: 18px; }
+    .header-stats { display: flex; gap: 12px; }
+    .stat-badge { padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; background: #FEF3F9; color: #EC4899; }
+    .candidatures-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px; }
+    .candidature-card { background: #F9FAFB; border-radius: 16px; padding: 20px; transition: 0.2s; border-left: 4px solid transparent; }
+    .candidature-card.nouvelle { border-left-color: #3B82F6; }
+    .candidature-card.en_cours { border-left-color: #F59E0B; }
+    .candidature-card.entretien { border-left-color: #8B5CF6; }
+    .candidature-card.acceptee { border-left-color: #10B981; opacity: 0.9; }
+    .candidature-card.refusee { border-left-color: #EF4444; opacity: 0.7; }
+    .candidature-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .header-left { display: flex; gap: 12px; align-items: center; }
+    .candidature-icon { font-size: 32px; width: 48px; height: 48px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+    .candidature-ref { font-size: 12px; color: #9CA3AF; font-family: monospace; }
+    .candidature-nom { font-weight: 600; color: #1F2937; margin-top: 2px; }
+    .candidature-poste { font-size: 12px; color: #6B7280; margin-top: 2px; }
+    .statut-badge { font-size: 11px; padding: 4px 8px; border-radius: 20px; }
+    .statut-badge.nouvelle { background: #DBEAFE; color: #1E40AF; }
+    .statut-badge.en_cours { background: #FEF3C7; color: #D97706; }
+    .statut-badge.entretien { background: #EDE9FE; color: #7C3AED; }
+    .statut-badge.acceptee { background: #DCFCE7; color: #16A34A; }
+    .statut-badge.refusee { background: #FEE2E2; color: #EF4444; }
+    .card-body { margin: 16px 0; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+    .info-label { color: #6B7280; }
+    .info-value { font-weight: 500; color: #1F2937; }
+    .card-footer { display: flex; justify-content: flex-end; margin-top: 16px; padding-top: 16px; border-top: 1px solid #F3F4F6; }
+    .footer-actions { display: flex; gap: 8px; }
+    .action-icon { background: none; border: 1px solid #FCE7F3; border-radius: 8px; padding: 6px 12px; cursor: pointer; transition: 0.2s; font-size: 14px; }
+    .action-icon:hover { background: #FEF3F9; border-color: #EC4899; }
+    .action-icon.delete:hover { background: #FEE2E2; border-color: #EF4444; }
+    .empty-state { text-align: center; padding: 60px; background: white; border-radius: 16px; border: 2px dashed #FCE7F3; }
     .empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
-    
-    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal-content { background: white; border-radius: 12px; padding: 30px; max-width: 400px; width: 90%; max-height: 80vh; overflow-y: auto; }
-    .modal-content.large { max-width: 800px; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .btn-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #6B7280; }
-    .details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-    .detail-section h4 { color: #EC4899; margin: 0 0 10px; }
-    .detail-section.full-width { grid-column: span 2; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px; }
-    .btn-delete { background: #EF4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+    .modal-container { background: white; border-radius: 20px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; animation: slideIn 0.2s ease; }
+    .modal-container.small { max-width: 450px; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #F3F4F6; }
+    .modal-header h3 { margin: 0; color: #EC4899; }
+    .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #9CA3AF; }
+    .modal-body { padding: 24px; }
+    .form-group { display: flex; flex-direction: column; margin-bottom: 16px; }
+    .form-group label { margin-bottom: 8px; color: #4B5563; font-weight: 500; font-size: 14px; }
+    .form-group input, .form-group textarea, .form-group select { padding: 12px; border: 2px solid #F3F4F6; border-radius: 10px; font-size: 14px; transition: border-color 0.2s; }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #EC4899; }
+    .readonly { background: #F9FAFB; color: #6B7280; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+    .btn-secondary { background: white; border: 2px solid #F3F4F6; padding: 10px 24px; border-radius: 10px; cursor: pointer; font-weight: 500; }
+    .btn-danger { background: #EF4444; color: white; border: none; padding: 10px 24px; border-radius: 10px; cursor: pointer; font-weight: 500; }
+    .detail-section { margin: 8px 0; }
+    .detail-section p { margin: 8px 0; font-size: 14px; }
+    @media (max-width: 768px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .candidatures-grid { grid-template-columns: 1fr; } .filter-group { flex-direction: column; } }
   `]
 })
 export class Candidatures implements OnInit {
   candidatures: Candidature[] = [];
   filteredCandidatures: Candidature[] = [];
-  selectedCandidature: Candidature | null = null;
-  postes: string[] = [];
-
-  currentCandidature: any = {
-    poste: '',
-    nom: '',
-    prenom: '',
-    email: '',
-    telephone: '',
-    adresse: '',
-    date_naissance: '',
-    date_candidature: new Date().toISOString().split('T')[0],
-    cv: '',
-    lettre_motivation: '',
-    diplomes: '',
-    experience: 0,
-    competences: '',
-    source: '',
-    statut: 'nouvelle',
-    notes: ''
-  };
-
   searchTerm = '';
-  posteFilter = '';
   statutFilter = '';
   showForm = false;
-  editMode = false;
-  showDeleteModal = false;
   showDetailsModal = false;
+  showDeleteModal = false;
+  editMode = false;
+  selectedCandidature: Candidature | null = null;
   candidatureToDelete: Candidature | null = null;
   successMessage = '';
 
-  ngOnInit() { 
-    this.loadCandidatures(); 
-    this.loadPostes();
+  currentCandidature: Partial<Candidature> = {
+    reference: '',
+    poste: '',
+    candidat_nom: '',
+    candidat_email: '',
+    date_candidature: new Date().toISOString().split('T')[0],
+    statut: 'nouvelle'
+  };
+
+  ngOnInit() {
+    this.loadCandidatures();
   }
 
   loadCandidatures() {
@@ -358,26 +355,52 @@ export class Candidatures implements OnInit {
     this.filteredCandidatures = [...this.candidatures];
   }
 
-  loadPostes() {
-    const postesSet = new Set(this.candidatures.map(c => c.poste));
-    this.postes = Array.from(postesSet);
+  saveCandidatures() {
+    localStorage.setItem('candidatures', JSON.stringify(this.candidatures));
+  }
+
+  openForm() {
+    this.currentCandidature = {
+      reference: this.generateReference(),
+      poste: '',
+      candidat_nom: '',
+      candidat_email: '',
+      candidat_telephone: '',
+      date_candidature: new Date().toISOString().split('T')[0],
+      source: '',
+      statut: 'nouvelle',
+      notes: ''
+    };
+    this.editMode = false;
+    this.showForm = true;
+  }
+
+  generateReference(): string {
+    const count = this.candidatures.length + 1;
+    return `CAND-${String(count).padStart(4, '0')}`;
   }
 
   saveCandidature() {
-    if (this.editMode) {
+    if (!this.currentCandidature.poste || !this.currentCandidature.candidat_nom || !this.currentCandidature.candidat_email) {
+      alert('Veuillez remplir tous les champs obligatoires (poste, nom, email)');
+      return;
+    }
+
+    if (this.editMode && this.currentCandidature.id) {
       const index = this.candidatures.findIndex(c => c.id === this.currentCandidature.id);
       if (index !== -1) {
-        this.candidatures[index] = { ...this.currentCandidature };
-        this.showSuccess('Candidature modifiée !');
+        this.candidatures[index] = { ...this.currentCandidature, updated_at: new Date().toISOString() } as Candidature;
+        this.showSuccess('Candidature modifiée');
       }
     } else {
-      const newCandidature = { ...this.currentCandidature, id: Date.now() };
-      this.candidatures.push(newCandidature);
-      this.showSuccess('Candidature ajoutée !');
+      this.candidatures.push({
+        ...this.currentCandidature,
+        id: Date.now(),
+        created_at: new Date().toISOString()
+      } as Candidature);
+      this.showSuccess('Candidature ajoutée');
     }
-    
-    localStorage.setItem('candidatures', JSON.stringify(this.candidatures));
-    this.loadPostes();
+    this.saveCandidatures();
     this.filterCandidatures();
     this.cancelForm();
   }
@@ -386,6 +409,13 @@ export class Candidatures implements OnInit {
     this.currentCandidature = { ...c };
     this.editMode = true;
     this.showForm = true;
+  }
+
+  changerStatut(c: Candidature, nouveauStatut: string) {
+    c.statut = nouveauStatut as any;
+    this.saveCandidatures();
+    this.filterCandidatures();
+    this.showSuccess(`Statut changé en ${this.getStatutLabel(nouveauStatut)}`);
   }
 
   viewDetails(c: Candidature) {
@@ -401,70 +431,54 @@ export class Candidatures implements OnInit {
   deleteCandidature() {
     if (this.candidatureToDelete) {
       this.candidatures = this.candidatures.filter(c => c.id !== this.candidatureToDelete?.id);
-      localStorage.setItem('candidatures', JSON.stringify(this.candidatures));
-      this.loadPostes();
+      this.saveCandidatures();
       this.filterCandidatures();
       this.showDeleteModal = false;
       this.candidatureToDelete = null;
-      this.showSuccess('Candidature supprimée !');
+      this.showSuccess('Candidature supprimée');
     }
   }
 
   cancelForm() {
-    this.currentCandidature = {
-      poste: '',
-      nom: '',
-      prenom: '',
-      email: '',
-      telephone: '',
-      adresse: '',
-      date_naissance: '',
-      date_candidature: new Date().toISOString().split('T')[0],
-      cv: '',
-      lettre_motivation: '',
-      diplomes: '',
-      experience: 0,
-      competences: '',
-      source: '',
-      statut: 'nouvelle',
-      notes: ''
-    };
     this.showForm = false;
     this.editMode = false;
   }
 
   filterCandidatures() {
-    let filtered = this.candidatures;
-
+    let filtered = [...this.candidatures];
     if (this.searchTerm) {
       const term = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(c => 
-        c.nom?.toLowerCase().includes(term) ||
-        c.prenom?.toLowerCase().includes(term) ||
-        c.email?.toLowerCase().includes(term) ||
-        c.poste?.toLowerCase().includes(term)
+      filtered = filtered.filter(c =>
+        c.candidat_nom?.toLowerCase().includes(term) ||
+        c.poste?.toLowerCase().includes(term) ||
+        c.reference?.toLowerCase().includes(term)
       );
     }
-
-    if (this.posteFilter) {
-      filtered = filtered.filter(c => c.poste === this.posteFilter);
-    }
-
     if (this.statutFilter) {
       filtered = filtered.filter(c => c.statut === this.statutFilter);
     }
-
     this.filteredCandidatures = filtered;
   }
 
+  getNouvelles(): number {
+    return this.candidatures.filter(c => c.statut === 'nouvelle').length;
+  }
+
+  getEnEntretien(): number {
+    return this.candidatures.filter(c => c.statut === 'entretien').length;
+  }
+
+  getAcceptees(): number {
+    return this.candidatures.filter(c => c.statut === 'acceptee').length;
+  }
+
   getStatutLabel(statut: string): string {
-    const labels: any = { 
-      nouvelle: 'Nouvelle', 
-      en_cours: 'En cours', 
-      entretien: 'Entretien', 
-      test: 'Test', 
-      acceptee: 'Acceptée', 
-      refusee: 'Refusée' 
+    const labels: any = {
+      nouvelle: '🆕 Nouvelle',
+      en_cours: '🔄 En cours',
+      entretien: '🗣️ Entretien',
+      acceptee: '✅ Acceptée',
+      refusee: '❌ Refusée'
     };
     return labels[statut] || statut;
   }

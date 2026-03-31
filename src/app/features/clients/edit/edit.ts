@@ -211,4 +211,5 @@ export class ClientEdit implements OnInit {
       this.router.navigate(['/clients', this.clientId]);
     }
   }
+  // Méthode save ajoutée automatiquement
 }

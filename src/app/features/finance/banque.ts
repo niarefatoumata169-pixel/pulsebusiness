@@ -5,18 +5,19 @@ import { FormsModule } from '@angular/forms';
 
 interface CompteBancaire {
   id?: number;
-  nom_banque: string;
-  numero_compte: string;
-  intitule_compte: string;
-  type_compte: 'courant' | 'epargne' | 'titre' | 'devise';
+  code: string;
+  nom: string;
+  banque: string;
+  numero: string;
+  type: 'compte_courant' | 'epargne' | 'bloque';
   devise: string;
-  solde_initial: number;
-  solde_actuel: number;
-  date_ouverture: string;
-  gestionnaire?: string;
-  telephone?: string;
-  email?: string;
+  solde: number;
+  agence?: string;
+  titulaire?: string;
+  statut: 'actif' | 'inactif';
   notes?: string;
+  created_at: string;
+  updated_at?: string;
 }
 
 @Component({
@@ -27,225 +28,470 @@ interface CompteBancaire {
     <div class="banque-container">
       <div class="header">
         <div>
-          <h1>Comptes bancaires</h1>
-          <p class="subtitle">{{ comptes.length }} compte(s) • Solde total: {{ soldeTotal | number }} FCFA</p>
+          <h1>🏦 Comptes bancaires</h1>
+          <p class="subtitle">{{ comptes.length }} compte(s) • Solde total: {{ getSoldeTotal() | number }} FCFA</p>
         </div>
-        <button class="btn-add" (click)="showForm = !showForm">+ Nouveau compte</button>
+        <div class="header-actions">
+          <button class="btn-add" (click)="openForm()">+ Nouveau compte</button>
+        </div>
       </div>
 
-      <!-- Message de succès -->
-      <div *ngIf="successMessage" class="alert-success">✅ {{ successMessage }}</div>
+      <div *ngIf="successMessage" class="alert-success">{{ successMessage }}</div>
 
-      <!-- Formulaire d'ajout -->
-      <div class="form-card" *ngIf="showForm">
-        <h3>{{ editMode ? 'Modifier' : 'Nouveau' }} compte</h3>
-        <form (ngSubmit)="saveCompte()" #compteForm="ngForm">
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Nom de la banque *</label>
-              <input type="text" [(ngModel)]="currentCompte.nom_banque" name="nom_banque" required>
-            </div>
-            <div class="form-group">
-              <label>Numéro de compte *</label>
-              <input type="text" [(ngModel)]="currentCompte.numero_compte" name="numero_compte" required>
-            </div>
-            <div class="form-group">
-              <label>Intitulé du compte</label>
-              <input type="text" [(ngModel)]="currentCompte.intitule_compte" name="intitule_compte">
-            </div>
-            <div class="form-group">
-              <label>Type de compte</label>
-              <select [(ngModel)]="currentCompte.type_compte" name="type_compte">
-                <option value="courant">Compte courant</option>
-                <option value="epargne">Compte épargne</option>
-                <option value="titre">Compte titres</option>
-                <option value="devise">Compte devise</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Devise</label>
-              <input type="text" [(ngModel)]="currentCompte.devise" name="devise" value="FCFA">
-            </div>
-            <div class="form-group">
-              <label>Solde initial</label>
-              <input type="number" [(ngModel)]="currentCompte.solde_initial" name="solde_initial" (input)="updateSolde()">
-            </div>
-            <div class="form-group">
-              <label>Solde actuel</label>
-              <input type="number" [(ngModel)]="currentCompte.solde_actuel" name="solde_actuel">
-            </div>
-            <div class="form-group">
-              <label>Date d'ouverture</label>
-              <input type="date" [(ngModel)]="currentCompte.date_ouverture" name="date_ouverture">
-            </div>
-            <div class="form-group">
-              <label>Gestionnaire</label>
-              <input type="text" [(ngModel)]="currentCompte.gestionnaire" name="gestionnaire">
-            </div>
-            <div class="form-group">
-              <label>Téléphone</label>
-              <input type="tel" [(ngModel)]="currentCompte.telephone" name="telephone">
-            </div>
-            <div class="form-group">
-              <label>Email</label>
-              <input type="email" [(ngModel)]="currentCompte.email" name="email">
-            </div>
-            <div class="form-group full-width">
-              <label>Notes</label>
-              <textarea [(ngModel)]="currentCompte.notes" name="notes" rows="3"></textarea>
-            </div>
+      <div class="kpi-grid" *ngIf="comptes.length > 0">
+        <div class="kpi-card">
+          <div class="kpi-icon">🏦</div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ comptes.length }}</span>
+            <span class="kpi-label">Comptes</span>
           </div>
-          <div class="form-actions">
-            <button type="button" class="btn-cancel" (click)="cancelForm()">Annuler</button>
-            <button type="submit" class="btn-save" [disabled]="compteForm.invalid">💾 Enregistrer</button>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">💰</div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ getSoldeTotal() | number }} <small>FCFA</small></span>
+            <span class="kpi-label">Solde total</span>
           </div>
-        </form>
-      </div>
-
-      <!-- Liste des comptes -->
-      <div class="comptes-grid" *ngIf="comptes.length > 0; else emptyState">
-        <div class="compte-card" *ngFor="let c of comptes">
-          <div class="compte-header">
-            <span class="banque-nom">{{ c.nom_banque }}</span>
-            <span class="compte-type">{{ getTypeLabel(c.type_compte) }}</span>
-          </div>
-          <div class="compte-body">
-            <div class="compte-numero">{{ c.numero_compte }}</div>
-            <div class="compte-intitule">{{ c.intitule_compte || 'Compte sans intitulé' }}</div>
-            <div class="compte-solde">
-              <span class="solde-label">Solde:</span>
-              <span class="solde-valeur">{{ c.solde_actuel | number }} {{ c.devise }}</span>
-            </div>
-          </div>
-          <div class="compte-actions">
-            <button class="btn-icon" (click)="editCompte(c)" title="Modifier">✏️</button>
-            <button class="btn-icon" [routerLink]="['/finance/tresorerie']" title="Voir mouvements">📊</button>
-            <button class="btn-icon delete" (click)="confirmDelete(c)" title="Supprimer">🗑️</button>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">✅</div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ getComptesActifs() }}</span>
+            <span class="kpi-label">Actifs</span>
           </div>
         </div>
       </div>
 
-      <!-- État vide -->
+      <div class="filters-section" *ngIf="comptes.length > 0">
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input [(ngModel)]="searchTerm" (ngModelChange)="filterComptes()" placeholder="Rechercher par code, banque, numéro..." class="search-input">
+        </div>
+        <div class="filter-group">
+          <select [(ngModel)]="statutFilter" (ngModelChange)="filterComptes()" class="filter-select">
+            <option value="">Tous statuts</option>
+            <option value="actif">✅ Actif</option>
+            <option value="inactif">⏸️ Inactif</option>
+          </select>
+          <select [(ngModel)]="typeFilter" (ngModelChange)="filterComptes()" class="filter-select">
+            <option value="">Tous types</option>
+            <option value="compte_courant">💳 Compte courant</option>
+            <option value="epargne">📈 Épargne</option>
+            <option value="bloque">🔒 Bloqué</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="comptes-section" *ngIf="comptes.length > 0; else emptyState">
+        <div class="section-header">
+          <h2>📋 Liste des comptes</h2>
+          <div class="header-stats">
+            <span class="stat-badge">{{ filteredComptes.length }} / {{ comptes.length }} affiché(s)</span>
+          </div>
+        </div>
+        <div class="comptes-grid">
+          <div class="compte-card" *ngFor="let c of filteredComptes" [class]="c.statut">
+            <div class="card-header">
+              <div class="header-left">
+                <div class="compte-icon">🏦</div>
+                <div class="compte-info">
+                  <div class="compte-code">{{ c.code }}</div>
+                  <div class="compte-nom">{{ c.nom }}</div>
+                  <div class="compte-banque">{{ c.banque }} - {{ c.numero }}</div>
+                </div>
+              </div>
+              <div class="header-right">
+                <div class="compte-solde">{{ c.solde | number }} FCFA</div>
+                <span class="statut-badge" [class]="c.statut">{{ getStatutLabel(c.statut) }}</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="info-row">
+                <span class="info-label">📊 Type:</span>
+                <span class="info-value">{{ getTypeLabel(c.type) }}</span>
+              </div>
+              <div class="info-row" *ngIf="c.titulaire">
+                <span class="info-label">👤 Titulaire:</span>
+                <span class="info-value">{{ c.titulaire }}</span>
+              </div>
+              <div class="info-row" *ngIf="c.agence">
+                <span class="info-label">🏢 Agence:</span>
+                <span class="info-value">{{ c.agence }}</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <div class="footer-actions">
+                <button class="action-icon" (click)="viewDetails(c)" title="Voir détails">👁️</button>
+                <button class="action-icon" (click)="editCompte(c)" title="Modifier">✏️</button>
+                <button class="action-icon" (click)="ajouterMouvement(c)" title="Ajouter mouvement">💸</button>
+                <button class="action-icon delete" (click)="confirmDelete(c)" title="Supprimer">🗑️</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <ng-template #emptyState>
         <div class="empty-state">
           <div class="empty-icon">🏦</div>
           <h2>Aucun compte bancaire</h2>
           <p>Ajoutez votre premier compte</p>
-          <button class="btn-primary" (click)="showForm = true">+ Nouveau compte</button>
+          <button class="btn-primary" (click)="openForm()">+ Nouveau compte</button>
         </div>
       </ng-template>
 
-      <!-- Modal de confirmation suppression -->
-      <div class="modal" *ngIf="showDeleteModal">
-        <div class="modal-content">
-          <h3>Confirmer la suppression</h3>
-          <p>Supprimer le compte <strong>{{ compteToDelete?.nom_banque }} - {{ compteToDelete?.numero_compte }}</strong> ?</p>
-          <div class="modal-actions">
-            <button class="btn-cancel" (click)="showDeleteModal = false">Annuler</button>
-            <button class="btn-delete" (click)="deleteCompte()">🗑️ Supprimer</button>
+      <!-- Modal formulaire -->
+      <div class="modal-overlay" *ngIf="showForm">
+        <div class="modal-container">
+          <div class="modal-header">
+            <h3>{{ editMode ? '✏️ Modifier' : '➕ Nouveau' }} compte</h3>
+            <button class="modal-close" (click)="cancelForm()">✕</button>
+          </div>
+          <div class="modal-body">
+            <form (ngSubmit)="saveCompte()">
+              <div class="form-group">
+                <label>Code *</label>
+                <input type="text" [(ngModel)]="currentCompte.code" required>
+              </div>
+              <div class="form-group">
+                <label>Nom du compte *</label>
+                <input type="text" [(ngModel)]="currentCompte.nom" required>
+              </div>
+              <div class="form-group">
+                <label>Banque *</label>
+                <input type="text" [(ngModel)]="currentCompte.banque" required>
+              </div>
+              <div class="form-group">
+                <label>Numéro de compte *</label>
+                <input type="text" [(ngModel)]="currentCompte.numero" required>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Type</label>
+                  <select [(ngModel)]="currentCompte.type">
+                    <option value="compte_courant">💳 Compte courant</option>
+                    <option value="epargne">📈 Épargne</option>
+                    <option value="bloque">🔒 Bloqué</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Devise</label>
+                  <select [(ngModel)]="currentCompte.devise">
+                    <option value="FCFA">FCFA</option>
+                    <option value="EUR">Euro (€)</option>
+                    <option value="USD">Dollar ($)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Solde initial</label>
+                <input type="number" [(ngModel)]="currentCompte.solde" step="1000">
+              </div>
+              <div class="form-group">
+                <label>Agence</label>
+                <input type="text" [(ngModel)]="currentCompte.agence">
+              </div>
+              <div class="form-group">
+                <label>Titulaire</label>
+                <input type="text" [(ngModel)]="currentCompte.titulaire">
+              </div>
+              <div class="form-group">
+                <label>Statut</label>
+                <select [(ngModel)]="currentCompte.statut">
+                  <option value="actif">✅ Actif</option>
+                  <option value="inactif">⏸️ Inactif</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Notes</label>
+                <textarea [(ngModel)]="currentCompte.notes" rows="2"></textarea>
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="btn-secondary" (click)="cancelForm()">Annuler</button>
+                <button type="submit" class="btn-primary">💾 Enregistrer</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal détails -->
+      <div class="modal-overlay" *ngIf="showDetailsModal && selectedCompte">
+        <div class="modal-container">
+          <div class="modal-header">
+            <h3>Détails du compte - {{ selectedCompte.nom }}</h3>
+            <button class="modal-close" (click)="showDetailsModal = false">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="detail-section">
+              <p><strong>Code:</strong> {{ selectedCompte.code }}</p>
+              <p><strong>Banque:</strong> {{ selectedCompte.banque }}</p>
+              <p><strong>Numéro:</strong> {{ selectedCompte.numero }}</p>
+              <p><strong>Type:</strong> {{ getTypeLabel(selectedCompte.type) }}</p>
+              <p><strong>Devise:</strong> {{ selectedCompte.devise }}</p>
+              <p><strong>Solde:</strong> {{ selectedCompte.solde | number }} FCFA</p>
+              <p><strong>Agence:</strong> {{ selectedCompte.agence || '-' }}</p>
+              <p><strong>Titulaire:</strong> {{ selectedCompte.titulaire || '-' }}</p>
+              <p><strong>Statut:</strong> {{ getStatutLabel(selectedCompte.statut) }}</p>
+              <p *ngIf="selectedCompte.notes"><strong>Notes:</strong> {{ selectedCompte.notes }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal mouvement (simplifié) -->
+      <div class="modal-overlay" *ngIf="showMouvementModal && mouvementCompte">
+        <div class="modal-container small">
+          <div class="modal-header">
+            <h3>💸 Ajouter un mouvement</h3>
+            <button class="modal-close" (click)="showMouvementModal = false">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Type</label>
+              <select [(ngModel)]="mouvementType">
+                <option value="depot">💵 Dépôt</option>
+                <option value="retrait">💸 Retrait</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Montant</label>
+              <input type="number" [(ngModel)]="mouvementMontant" step="1000">
+            </div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" [(ngModel)]="mouvementDate">
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <input type="text" [(ngModel)]="mouvementDescription">
+            </div>
+            <div class="modal-actions">
+              <button class="btn-secondary" (click)="showMouvementModal = false">Annuler</button>
+              <button class="btn-primary" (click)="saveMouvement()">💾 Enregistrer</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal suppression -->
+      <div class="modal-overlay" *ngIf="showDeleteModal">
+        <div class="modal-container small">
+          <div class="modal-header">
+            <h3>🗑️ Confirmer la suppression</h3>
+            <button class="modal-close" (click)="showDeleteModal = false">✕</button>
+          </div>
+          <div class="modal-body">
+            <p>Supprimer le compte <strong>{{ compteToDelete?.nom }}</strong> ?</p>
+            <div class="modal-actions">
+              <button class="btn-secondary" (click)="showDeleteModal = false">Annuler</button>
+              <button class="btn-danger" (click)="deleteCompte()">🗑️ Supprimer</button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   `,
   styles: [`
-    .banque-container { padding: 24px; max-width: 1400px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .banque-container { padding: 24px; max-width: 1400px; margin: 0 auto; background: #F9FAFB; min-height: 100vh; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
     h1 { color: #1F2937; font-size: 28px; margin: 0; }
-    .subtitle { color: #6B7280; margin: 0; }
-    .btn-add, .btn-primary { background: #EC4899; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-    .alert-success { background: #10B981; color: white; padding: 12px; border-radius: 8px; margin-bottom: 20px; }
-    .form-card { background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 1px solid #FCE7F3; }
-    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-    .full-width { grid-column: span 2; }
-    .form-group { display: flex; flex-direction: column; }
-    label { margin-bottom: 5px; color: #4B5563; }
-    input, textarea, select { padding: 10px; border: 2px solid #FCE7F3; border-radius: 8px; }
-    .form-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px; }
-    .btn-cancel { background: white; border: 2px solid #FCE7F3; border-radius: 8px; padding: 10px 20px; cursor: pointer; }
-    .btn-save { background: #EC4899; color: white; border: none; padding: 10px 30px; border-radius: 8px; cursor: pointer; }
-    .comptes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
-    .compte-card { background: white; border-radius: 12px; padding: 20px; border: 1px solid #FCE7F3; }
-    .compte-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .banque-nom { font-weight: 600; color: #1F2937; }
-    .compte-type { font-size: 12px; padding: 4px 8px; background: #FDF2F8; border-radius: 4px; color: #EC4899; }
-    .compte-numero { font-family: monospace; font-size: 14px; color: #6B7280; margin-bottom: 5px; }
-    .compte-intitule { color: #1F2937; margin-bottom: 15px; }
-    .compte-solde { display: flex; justify-content: space-between; border-top: 1px solid #FCE7F3; padding-top: 15px; }
-    .solde-label { color: #6B7280; }
-    .solde-valeur { font-weight: 600; color: #10B981; }
-    .compte-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
-    .btn-icon { background: none; border: 1px solid #FCE7F3; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
-    .btn-icon.delete:hover { background: #FEE2E2; border-color: #EF4444; }
-    .empty-state { text-align: center; padding: 60px; background: white; border-radius: 12px; border: 2px dashed #FCE7F3; }
+    .subtitle { color: #6B7280; margin: 8px 0 0 0; }
+    .header-actions { display: flex; gap: 12px; }
+    .btn-add, .btn-primary { background: #EC4899; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+    .btn-add:hover, .btn-primary:hover { background: #DB2777; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(236,72,153,0.3); }
+    .alert-success { background: #10B981; color: white; padding: 14px 20px; border-radius: 12px; margin-bottom: 20px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px; }
+    .kpi-card { background: white; border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .kpi-icon { font-size: 32px; width: 56px; height: 56px; background: #FDF2F8; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+    .kpi-content { flex: 1; }
+    .kpi-value { display: block; font-size: 24px; font-weight: 700; color: #EC4899; }
+    .kpi-label { font-size: 13px; color: #6B7280; }
+    .filters-section { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; background: white; padding: 16px 20px; border-radius: 16px; }
+    .search-wrapper { flex: 2; display: flex; align-items: center; gap: 12px; background: #F9FAFB; border-radius: 12px; padding: 8px 16px; border: 1px solid #F3F4F6; }
+    .search-icon { color: #9CA3AF; }
+    .search-input { flex: 1; border: none; background: transparent; outline: none; }
+    .filter-group { display: flex; gap: 12px; flex: 2; flex-wrap: wrap; }
+    .filter-select { padding: 8px 16px; border: 1px solid #F3F4F6; border-radius: 10px; background: white; flex: 1; }
+    .comptes-section { background: white; border-radius: 16px; padding: 20px; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .section-header h2 { margin: 0; font-size: 18px; }
+    .header-stats { display: flex; gap: 12px; }
+    .stat-badge { padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; background: #FEF3F9; color: #EC4899; }
+    .comptes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px; }
+    .compte-card { background: #F9FAFB; border-radius: 16px; padding: 20px; transition: 0.2s; border-left: 4px solid transparent; }
+    .compte-card.actif { border-left-color: #10B981; }
+    .compte-card.inactif { border-left-color: #9CA3AF; opacity: 0.7; }
+    .compte-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .header-left { display: flex; gap: 12px; align-items: center; }
+    .compte-icon { font-size: 32px; width: 48px; height: 48px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+    .compte-code { font-size: 12px; color: #9CA3AF; font-family: monospace; }
+    .compte-nom { font-weight: 600; color: #1F2937; margin-top: 2px; }
+    .compte-banque { font-size: 12px; color: #6B7280; margin-top: 2px; }
+    .header-right { text-align: right; }
+    .compte-solde { font-weight: 700; color: #EC4899; margin-bottom: 8px; }
+    .statut-badge { font-size: 11px; padding: 4px 8px; border-radius: 20px; }
+    .statut-badge.actif { background: #DCFCE7; color: #16A34A; }
+    .statut-badge.inactif { background: #F3F4F6; color: #6B7280; }
+    .card-body { margin: 16px 0; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+    .info-label { color: #6B7280; }
+    .info-value { font-weight: 500; color: #1F2937; }
+    .card-footer { display: flex; justify-content: flex-end; margin-top: 16px; padding-top: 16px; border-top: 1px solid #F3F4F6; }
+    .footer-actions { display: flex; gap: 8px; }
+    .action-icon { background: none; border: 1px solid #FCE7F3; border-radius: 8px; padding: 6px 12px; cursor: pointer; transition: 0.2s; font-size: 14px; }
+    .action-icon:hover { background: #FEF3F9; border-color: #EC4899; }
+    .action-icon.delete:hover { background: #FEE2E2; border-color: #EF4444; }
+    .empty-state { text-align: center; padding: 60px; background: white; border-radius: 16px; border: 2px dashed #FCE7F3; }
     .empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
-    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
-    .modal-content { background: white; border-radius: 12px; padding: 30px; max-width: 400px; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px; }
-    .btn-delete { background: #EF4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+    .modal-container { background: white; border-radius: 20px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; animation: slideIn 0.2s ease; }
+    .modal-container.small { max-width: 450px; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #F3F4F6; }
+    .modal-header h3 { margin: 0; color: #EC4899; }
+    .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #9CA3AF; }
+    .modal-body { padding: 24px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .form-group { display: flex; flex-direction: column; margin-bottom: 16px; }
+    .form-group label { margin-bottom: 8px; color: #4B5563; font-weight: 500; font-size: 14px; }
+    .form-group input, .form-group textarea, .form-group select { padding: 12px; border: 2px solid #F3F4F6; border-radius: 10px; font-size: 14px; transition: border-color 0.2s; }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #EC4899; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+    .btn-secondary { background: white; border: 2px solid #F3F4F6; padding: 10px 24px; border-radius: 10px; cursor: pointer; font-weight: 500; }
+    .btn-danger { background: #EF4444; color: white; border: none; padding: 10px 24px; border-radius: 10px; cursor: pointer; font-weight: 500; }
+    .detail-section { margin: 8px 0; }
+    .detail-section p { margin: 8px 0; font-size: 14px; }
+    @media (max-width: 768px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .comptes-grid { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; gap: 12px; } .filter-group { flex-direction: column; } }
   `]
 })
 export class Banque implements OnInit {
   comptes: CompteBancaire[] = [];
-  currentCompte: any = {
-    nom_banque: '',
-    numero_compte: '',
-    intitule_compte: '',
-    type_compte: 'courant',
-    devise: 'FCFA',
-    solde_initial: 0,
-    solde_actuel: 0,
-    date_ouverture: new Date().toISOString().split('T')[0],
-    gestionnaire: '',
-    telephone: '',
-    email: '',
-    notes: ''
-  };
+  filteredComptes: CompteBancaire[] = [];
+  searchTerm = '';
+  statutFilter = '';
+  typeFilter = '';
   showForm = false;
-  editMode = false;
+  showDetailsModal = false;
   showDeleteModal = false;
+  showMouvementModal = false;
+  editMode = false;
+  selectedCompte: CompteBancaire | null = null;
   compteToDelete: CompteBancaire | null = null;
+  mouvementCompte: CompteBancaire | null = null;
+  mouvementType = 'depot';
+  mouvementMontant = 0;
+  mouvementDate = new Date().toISOString().split('T')[0];
+  mouvementDescription = '';
   successMessage = '';
 
-  soldeTotal = 0;
+  currentCompte: Partial<CompteBancaire> = {
+    code: '',
+    nom: '',
+    banque: '',
+    numero: '',
+    type: 'compte_courant',
+    devise: 'FCFA',
+    solde: 0,
+    statut: 'actif'
+  };
 
-  ngOnInit() { this.loadComptes(); }
+  ngOnInit() {
+    this.loadComptes();
+  }
 
   loadComptes() {
     const saved = localStorage.getItem('comptes_bancaires');
     this.comptes = saved ? JSON.parse(saved) : [];
-    this.calculerSoldeTotal();
+    this.filteredComptes = [...this.comptes];
   }
 
   saveComptes() {
     localStorage.setItem('comptes_bancaires', JSON.stringify(this.comptes));
-    this.calculerSoldeTotal();
+  }
+
+  openForm() {
+    this.currentCompte = {
+      code: this.generateCode(),
+      nom: '',
+      banque: '',
+      numero: '',
+      type: 'compte_courant',
+      devise: 'FCFA',
+      solde: 0,
+      agence: '',
+      titulaire: '',
+      statut: 'actif'
+    };
+    this.editMode = false;
+    this.showForm = true;
+  }
+
+  generateCode(): string {
+    const count = this.comptes.length + 1;
+    return `CPT-${String(count).padStart(4, '0')}`;
   }
 
   saveCompte() {
-    if (this.editMode) {
+    if (!this.currentCompte.code || !this.currentCompte.nom || !this.currentCompte.banque || !this.currentCompte.numero) {
+      alert('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
+    if (this.editMode && this.currentCompte.id) {
       const index = this.comptes.findIndex(c => c.id === this.currentCompte.id);
       if (index !== -1) {
-        this.comptes[index] = { ...this.currentCompte };
-        this.showSuccess('Compte modifié !');
+        this.comptes[index] = { ...this.currentCompte, updated_at: new Date().toISOString() } as CompteBancaire;
+        this.showSuccess('Compte modifié');
       }
     } else {
-      const newCompte = { ...this.currentCompte, id: Date.now() };
-      this.comptes.push(newCompte);
-      this.showSuccess('Compte ajouté !');
+      this.comptes.push({
+        ...this.currentCompte,
+        id: Date.now(),
+        created_at: new Date().toISOString()
+      } as CompteBancaire);
+      this.showSuccess('Compte ajouté');
     }
     this.saveComptes();
+    this.filterComptes();
     this.cancelForm();
-  }
-
-  updateSolde() {
-    this.currentCompte.solde_actuel = this.currentCompte.solde_initial;
   }
 
   editCompte(c: CompteBancaire) {
     this.currentCompte = { ...c };
     this.editMode = true;
     this.showForm = true;
+  }
+
+  ajouterMouvement(c: CompteBancaire) {
+    this.mouvementCompte = c;
+    this.mouvementType = 'depot';
+    this.mouvementMontant = 0;
+    this.mouvementDate = new Date().toISOString().split('T')[0];
+    this.mouvementDescription = '';
+    this.showMouvementModal = true;
+  }
+
+  saveMouvement() {
+    if (this.mouvementCompte && this.mouvementMontant > 0) {
+      if (this.mouvementType === 'depot') {
+        this.mouvementCompte.solde += this.mouvementMontant;
+      } else {
+        this.mouvementCompte.solde -= this.mouvementMontant;
+      }
+      this.saveComptes();
+      this.filterComptes();
+      this.showMouvementModal = false;
+      this.showSuccess('Mouvement enregistré');
+    } else {
+      alert('Montant invalide');
+    }
+  }
+
+  viewDetails(c: CompteBancaire) {
+    this.selectedCompte = c;
+    this.showDetailsModal = true;
   }
 
   confirmDelete(c: CompteBancaire) {
@@ -257,38 +503,57 @@ export class Banque implements OnInit {
     if (this.compteToDelete) {
       this.comptes = this.comptes.filter(c => c.id !== this.compteToDelete?.id);
       this.saveComptes();
+      this.filterComptes();
       this.showDeleteModal = false;
       this.compteToDelete = null;
-      this.showSuccess('Compte supprimé !');
+      this.showSuccess('Compte supprimé');
     }
   }
 
   cancelForm() {
-    this.currentCompte = {
-      nom_banque: '',
-      numero_compte: '',
-      intitule_compte: '',
-      type_compte: 'courant',
-      devise: 'FCFA',
-      solde_initial: 0,
-      solde_actuel: 0,
-      date_ouverture: new Date().toISOString().split('T')[0],
-      gestionnaire: '',
-      telephone: '',
-      email: '',
-      notes: ''
-    };
     this.showForm = false;
     this.editMode = false;
   }
 
-  calculerSoldeTotal() {
-    this.soldeTotal = this.comptes.reduce((s, c) => s + (c.solde_actuel || 0), 0);
+  filterComptes() {
+    let filtered = [...this.comptes];
+    if (this.searchTerm) {
+      const term = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(c =>
+        c.code?.toLowerCase().includes(term) ||
+        c.nom?.toLowerCase().includes(term) ||
+        c.banque?.toLowerCase().includes(term) ||
+        c.numero?.toLowerCase().includes(term)
+      );
+    }
+    if (this.statutFilter) {
+      filtered = filtered.filter(c => c.statut === this.statutFilter);
+    }
+    if (this.typeFilter) {
+      filtered = filtered.filter(c => c.type === this.typeFilter);
+    }
+    this.filteredComptes = filtered;
+  }
+
+  getSoldeTotal(): number {
+    return this.comptes.reduce((sum, c) => sum + (c.solde || 0), 0);
+  }
+
+  getComptesActifs(): number {
+    return this.comptes.filter(c => c.statut === 'actif').length;
   }
 
   getTypeLabel(type: string): string {
-    const labels: any = { courant: 'Courant', epargne: 'Épargne', titre: 'Titres', devise: 'Devise' };
+    const labels: any = {
+      compte_courant: '💳 Compte courant',
+      epargne: '📈 Épargne',
+      bloque: '🔒 Bloqué'
+    };
     return labels[type] || type;
+  }
+
+  getStatutLabel(statut: string): string {
+    return statut === 'actif' ? '✅ Actif' : '⏸️ Inactif';
   }
 
   showSuccess(msg: string) {

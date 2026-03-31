@@ -1,106 +1,124 @@
 import { Injectable } from '@angular/core';
 import * as XLSX from 'xlsx';
 
-@Injectable({
-  providedIn: 'root'
-})
+// Définition d'interfaces minimales pour les données attendues
+interface ClientData {
+  id?: number;
+  nom?: string;
+  email?: string;
+  telephone?: string;
+  ville?: string;
+  pays?: string;
+  created_at?: string;
+}
+
+interface FactureData {
+  reference?: string;
+  client_nom?: string;
+  date_emission?: string;
+  montant_ht?: number;
+  montant_ttc?: number;
+  statut?: string;
+  created_at?: string;
+}
+
+interface ChantierData {
+  id?: number;
+  nom?: string;
+  client_nom?: string;
+  statut?: string;
+  budget_prevu?: number;
+  date_debut_prevue?: string;
+  date_fin_prevue?: string;
+  responsable_nom?: string;
+}
+
+@Injectable({ providedIn: 'root' })
 export class ExcelService {
-  
-  constructor() { }
-
-  /**
-   * Exporte les données vers un fichier Excel
-   * @param data - Tableau de données à exporter
-   * @param fileName - Nom du fichier (sans extension)
-   * @param sheetName - Nom de la feuille Excel
-   */
-  exportToExcel(data: any[], fileName: string, sheetName: string = 'Sheet1'): void {
-    // Créer une feuille de calcul
-    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(data);
-    
-    // Créer un classeur
-    const wb: XLSX.WorkBook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, sheetName);
-    
-    // Exporter le fichier
-    XLSX.writeFile(wb, `${fileName}.xlsx`);
+  private formatDate(date: string | Date | undefined): string {
+    if (!date) return '';
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
   }
 
-  /**
-   * Exporte les clients vers Excel
-   */
-  exportClients(clients: any[]): void {
-    const data = clients.map(client => ({
-      'ID': client.id,
-      'Nom': client.nom,
-      'Email': client.email,
-      'Téléphone': client.telephone,
-      'Ville': client.ville,
-      'Pays': client.pays,
-      'Date création': client.created_at ? new Date(client.created_at).toLocaleDateString() : ''
+  private export(data: any[], fileName: string, sheetName: string = 'Sheet1'): void {
+    try {
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      XLSX.writeFile(wb, `${fileName}.xlsx`);
+    } catch (error) {
+      console.error('Excel export failed', error);
+      // Optionnel : notifier l'utilisateur
+    }
+  }
+
+  exportClients(clients: ClientData[], fileName: string = 'clients'): void {
+    const data = clients.map(c => ({
+      ID: c.id,
+      Nom: c.nom,
+      Email: c.email,
+      Téléphone: c.telephone,
+      Ville: c.ville,
+      Pays: c.pays,
+      'Date création': this.formatDate(c.created_at)
     }));
-    
-    this.exportToExcel(data, 'clients', 'Clients');
+    this.export(data, fileName, 'Clients');
   }
 
-  /**
-   * Exporte les factures vers Excel
-   */
-  exportFactures(factures: any[]): void {
-    const data = factures.map(facture => ({
-      'Numéro': facture.numero,
-      'Client': facture.client_nom || facture.client_id,
-      'Date': facture.date_facture ? new Date(facture.date_facture).toLocaleDateString() : '',
-      'Montant HT': facture.montant_ht,
-      'Montant TTC': facture.montant_ttc,
-      'Statut': facture.statut,
-      'Date création': facture.created_at ? new Date(facture.created_at).toLocaleDateString() : ''
+  exportFactures(factures: FactureData[], fileName: string = 'factures'): void {
+    const data = factures.map(f => ({
+      Référence: f.reference,
+      Client: f.client_nom,
+      Date: this.formatDate(f.date_emission),
+      'Montant HT': f.montant_ht,
+      'Montant TTC': f.montant_ttc,
+      Statut: f.statut,
+      'Date création': this.formatDate(f.created_at)
     }));
-    
-    this.exportToExcel(data, 'factures', 'Factures');
+    this.export(data, fileName, 'Factures');
   }
 
-  /**
-   * Exporte les chantiers vers Excel
-   */
-  exportChantiers(chantiers: any[]): void {
-    const data = chantiers.map(chantier => ({
-      'ID': chantier.id,
-      'Nom': chantier.nom,
-      'Client': chantier.client_nom || chantier.client_id,
-      'Statut': chantier.statut,
-      'Budget': chantier.budget,
-      'Date début': chantier.date_debut ? new Date(chantier.date_debut).toLocaleDateString() : '',
-      'Date fin': chantier.date_fin ? new Date(chantier.date_fin).toLocaleDateString() : '',
-      'Responsable': chantier.responsable
+  exportChantiers(chantiers: ChantierData[], fileName: string = 'chantiers'): void {
+    const data = chantiers.map(c => ({
+      ID: c.id,
+      Nom: c.nom,
+      Client: c.client_nom,
+      Statut: c.statut,
+      Budget: c.budget_prevu,
+      'Début prévu': this.formatDate(c.date_debut_prevue),
+      'Fin prévue': this.formatDate(c.date_fin_prevue),
+      Responsable: c.responsable_nom
     }));
-    
-    this.exportToExcel(data, 'chantiers', 'Chantiers');
+    this.export(data, fileName, 'Chantiers');
   }
 
-  /**
-   * Importe un fichier Excel
-   * @param file - Fichier Excel à importer
-   * @returns Promise avec les données
-   */
-  importFromExcel(file: File): Promise<any[]> {
+  exportCustom(data: any[], columns: { header: string; key: string }[], fileName: string, sheetName: string = 'Data'): void {
+    const mapped = data.map(item => {
+      const row: any = {};
+      columns.forEach(col => { row[col.header] = item[col.key]; });
+      return row;
+    });
+    this.export(mapped, fileName, sheetName);
+  }
+
+  importFromExcel(file: File, sheetIndex: number = 0): Promise<any[]> {
     return new Promise((resolve, reject) => {
-      const reader: FileReader = new FileReader();
-      
+      const reader = new FileReader();
       reader.onload = (e: any) => {
         try {
           const data = new Uint8Array(e.target.result);
-          const workbook: XLSX.WorkBook = XLSX.read(data, { type: 'array' });
-          const firstSheet: string = workbook.SheetNames[0];
-          const worksheet: XLSX.WorkSheet = workbook.Sheets[firstSheet];
-          const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet);
-          resolve(jsonData);
-        } catch (error) {
-          reject(error);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[sheetIndex];
+          if (!sheetName) throw new Error(`Sheet index ${sheetIndex} not found`);
+          const worksheet = workbook.Sheets[sheetName];
+          const json = XLSX.utils.sheet_to_json(worksheet);
+          resolve(json);
+        } catch (err) {
+          reject(err);
         }
       };
-      
-      reader.onerror = (error) => reject(error);
+      reader.onerror = (err) => reject(err);
       reader.readAsArrayBuffer(file);
     });
   }

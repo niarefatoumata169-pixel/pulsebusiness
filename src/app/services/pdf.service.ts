@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import jsPDF from 'jspdf';
+import * as jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 @Injectable({
@@ -13,7 +13,7 @@ export class PdfService {
    * Génère un PDF de facture
    */
   generateFacture(facture: any, client: any, articles: any[] = []): void {
-    const doc = new jsPDF();
+    const doc = new jsPDF.default();
     const pageWidth = doc.internal.pageSize.getWidth();
     
     // En-tête
@@ -38,19 +38,19 @@ export class PdfService {
     doc.setFont('helvetica', 'bold');
     doc.text('FACTURE N°:', 20, yPos);
     doc.setFont('helvetica', 'normal');
-    doc.text(facture.numero || 'N/A', 60, yPos);
+    doc.text(facture['numero'] || 'N/A', 60, yPos);
     
     yPos += 7;
     doc.setFont('helvetica', 'bold');
     doc.text('Date:', 20, yPos);
     doc.setFont('helvetica', 'normal');
-    doc.text(facture.date_facture ? new Date(facture.date_facture).toLocaleDateString() : 'N/A', 60, yPos);
+    doc.text(facture['date_facture'] ? new Date(facture['date_facture']).toLocaleDateString() : 'N/A', 60, yPos);
     
     yPos += 7;
     doc.setFont('helvetica', 'bold');
     doc.text('Échéance:', 20, yPos);
     doc.setFont('helvetica', 'normal');
-    doc.text(facture.date_echeance ? new Date(facture.date_echeance).toLocaleDateString() : 'N/A', 60, yPos);
+    doc.text(facture['date_echeance'] ? new Date(facture['date_echeance']).toLocaleDateString() : 'N/A', 60, yPos);
     
     // Informations client
     yPos += 15;
@@ -64,19 +64,19 @@ export class PdfService {
     doc.setFont('helvetica', 'bold');
     doc.text('Nom:', 25, yPos);
     doc.setFont('helvetica', 'normal');
-    doc.text(client?.nom || 'N/A', 45, yPos);
+    doc.text(client?.['nom'] || 'N/A', 45, yPos);
     
     yPos += 7;
     doc.setFont('helvetica', 'bold');
     doc.text('Email:', 25, yPos);
     doc.setFont('helvetica', 'normal');
-    doc.text(client?.email || 'N/A', 45, yPos);
+    doc.text(client?.['email'] || 'N/A', 45, yPos);
     
     yPos += 7;
     doc.setFont('helvetica', 'bold');
     doc.text('Tél:', 25, yPos);
     doc.setFont('helvetica', 'normal');
-    doc.text(client?.telephone || 'N/A', 45, yPos);
+    doc.text(client?.['telephone'] || 'N/A', 45, yPos);
     
     // Tableau des articles
     yPos += 15;
@@ -86,11 +86,11 @@ export class PdfService {
         startY: yPos,
         head: [['Description', 'Quantité', 'Prix unitaire', 'TVA', 'Total']],
         body: articles.map(a => [
-          a.description || '-',
-          a.quantite?.toString() || '0',
-          (a.prix_unitaire || 0).toFixed(2) + ' FCFA',
-          (a.tva || 0) + '%',
-          ((a.quantite || 0) * (a.prix_unitaire || 0) * (1 + (a.tva || 0)/100)).toFixed(2) + ' FCFA'
+          a['description'] || '-',
+          (a['quantite'] ?? 0).toString(),
+          (a['prix_unitaire'] ?? 0).toFixed(2) + ' FCFA',
+          (a['tva'] ?? 0) + '%',
+          (((a['quantite'] ?? 0) * (a['prix_unitaire'] ?? 0) * (1 + (a['tva'] ?? 0)/100)).toFixed(2)) + ' FCFA'
         ]),
         headStyles: { fillColor: [236, 72, 153] },
         columnStyles: { 0: { cellWidth: 60 } }
@@ -103,8 +103,8 @@ export class PdfService {
     }
     
     // Totaux
-    const totalHT = facture.montant_ht || 0;
-    const totalTTC = facture.montant_ttc || 0;
+    const totalHT = facture['montant_ht'] || 0;
+    const totalTTC = facture['montant_ttc'] || 0;
     
     doc.setFillColor(243, 244, 246);
     doc.rect(pageWidth - 80, yPos, 60, 30, 'F');
@@ -124,8 +124,7 @@ export class PdfService {
     doc.setTextColor(0, 0, 0);
     yPos += 40;
     
-    // CORRECTION ICI : Utiliser une chaîne RGB au lieu d'un tableau de nombres
-    if (facture.statut === 'payée') {
+    if (facture['statut'] === 'payée') {
       doc.setFillColor('#10B981'); // Vert
     } else {
       doc.setFillColor('#EF4444'); // Rouge
@@ -135,7 +134,7 @@ export class PdfService {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text(facture.statut?.toUpperCase() || 'EN ATTENTE', 25, yPos + 10);
+    doc.text((facture['statut']?.toUpperCase() || 'EN ATTENTE'), 25, yPos + 10);
     
     // Pied de page
     doc.setTextColor(150, 150, 150);
@@ -143,14 +142,14 @@ export class PdfService {
     doc.text('Document généré par PulseBusiness', pageWidth / 2, 280, { align: 'center' });
     
     // Sauvegarder le PDF
-    doc.save(`facture_${facture.numero || 'sans_numero'}.pdf`);
+    doc.save(`facture_${facture['numero'] || 'sans_numero'}.pdf`);
   }
 
   /**
    * Génère un PDF de liste de clients
    */
   generateClientsList(clients: any[]): void {
-    const doc = new jsPDF();
+    const doc = new jsPDF.default();
     
     doc.setFillColor(236, 72, 153);
     doc.rect(0, 0, 210, 20, 'F');
@@ -163,11 +162,11 @@ export class PdfService {
     doc.setTextColor(0, 0, 0);
     
     const data = clients.map(c => [
-      c.nom || '-',
-      c.email || '-',
-      c.telephone || '-',
-      c.ville || '-',
-      c.pays || '-'
+      c['nom'] || '-',
+      c['email'] || '-',
+      c['telephone'] || '-',
+      c['ville'] || '-',
+      c['pays'] || '-'
     ]);
     
     autoTable(doc, {
@@ -184,7 +183,7 @@ export class PdfService {
    * Génère un PDF de liste de factures
    */
   generateFacturesList(factures: any[]): void {
-    const doc = new jsPDF();
+    const doc = new jsPDF.default();
     
     doc.setFillColor(236, 72, 153);
     doc.rect(0, 0, 210, 20, 'F');
@@ -197,11 +196,11 @@ export class PdfService {
     doc.setTextColor(0, 0, 0);
     
     const data = factures.map(f => [
-      f.numero || '-',
-      f.client_nom || '-',
-      f.date_facture ? new Date(f.date_facture).toLocaleDateString() : '-',
-      (f.montant_ttc || 0).toFixed(2) + ' FCFA',
-      f.statut || '-'
+      f['numero'] || '-',
+      f['client_nom'] || '-',
+      f['date_facture'] ? new Date(f['date_facture']).toLocaleDateString() : '-',
+      (f['montant_ttc'] ?? 0).toFixed(2) + ' FCFA',
+      f['statut'] || '-'
     ]);
     
     autoTable(doc, {

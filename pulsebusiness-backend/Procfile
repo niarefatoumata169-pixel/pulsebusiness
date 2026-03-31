@@ -1,0 +1,61 @@
+-- ...existing code...
+BEGIN;
+
+-- Supprimer les contraintes de clé étrangère temporairement (si elles existent)
+ALTER TABLE IF EXISTS articles DROP CONSTRAINT IF EXISTS articles_user_id_fkey;
+ALTER TABLE IF EXISTS caisse DROP CONSTRAINT IF EXISTS caisse_user_id_fkey;
+
+-- Supprimer la table users sans CASCADE (plus sûr)
+DROP TABLE IF EXISTS users;
+
+-- Recréer la table users avec toutes les colonnes nécessaires
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    nom VARCHAR(100),
+    prenom VARCHAR(100),
+    telephone VARCHAR(20),
+    entreprise VARCHAR(200),
+    role VARCHAR(50) DEFAULT 'user',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index pour rendre l'email insensible à la casse (évite les problèmes de login/inscription)
+CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_idx ON users (LOWER(email));
+
+-- Fonction et trigger pour mettre à jour updated_at automatiquement
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at := NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_set_updated_at
+BEFORE UPDATE ON users
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+-- Neutraliser toutes les références utilisateurs existantes (évite les erreurs lors de l'ajout des FK)
+-- Si vous préférez conserver des relations, adaptez pour lier à un utilisateur "system" créé ici.
+UPDATE articles SET user_id = NULL WHERE user_id IS NOT NULL;
+UPDATE caisse   SET user_id = NULL WHERE user_id IS NOT NULL;
+
+-- Recréer les contraintes de clé étrangère
+ALTER TABLE IF EXISTS articles ADD CONSTRAINT articles_user_id_fkey 
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE IF EXISTS caisse ADD CONSTRAINT caisse_user_id_fkey 
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED;
+
+-- Insérer un utilisateur de test (email en minuscule)
+INSERT INTO users (email, password, nom, role) VALUES 
+(lower('demo@test.com'), '$2b$10$i343GGkDb2TzOPIOeIE3AewROp/cyqpHIcgfVfB4hysFDsQviU/am', 'Demo', 'user');
+
+COMMIT;
+
+-- Vérifier la structure
+\d+ users
+-- ...existing code...web: node dist/server.js

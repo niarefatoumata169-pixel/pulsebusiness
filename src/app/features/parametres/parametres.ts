@@ -9,7 +9,7 @@ import { RouterModule } from '@angular/router';
   imports: [CommonModule, FormsModule, RouterModule],
   template: `
     <div class="parametres-container">
-      <h1>Paramètres</h1>
+      <h1>⚙️ Paramètres</h1>
 
       <!-- Tabs de navigation -->
       <div class="tabs">
@@ -102,7 +102,7 @@ import { RouterModule } from '@angular/router';
           <div class="settings-grid">
             <div class="setting-item full-width">
               <label>Raison sociale</label>
-              <input type="text" [(ngModel)]="entreprise.nom" class="form-control" placeholder="H2A Holding">
+              <input type="text" [(ngModel)]="entreprise.nom" class="form-control" placeholder="PulseBusiness">
             </div>
 
             <div class="setting-item">
@@ -112,17 +112,17 @@ import { RouterModule } from '@angular/router';
 
             <div class="setting-item">
               <label>Téléphone</label>
-              <input type="tel" [(ngModel)]="entreprise.telephone" class="form-control" placeholder="+225 00 00 00 00">
+              <input type="tel" [(ngModel)]="entreprise.telephone" class="form-control" placeholder="+223 XX XX XX XX">
             </div>
 
             <div class="setting-item full-width">
               <label>Adresse</label>
-              <input type="text" [(ngModel)]="entreprise.adresse" class="form-control" placeholder="Abidjan, Cocody">
+              <input type="text" [(ngModel)]="entreprise.adresse" class="form-control" placeholder="Bamako, Mali">
             </div>
 
             <div class="setting-item">
               <label>N° RC</label>
-              <input type="text" [(ngModel)]="entreprise.rc" class="form-control" placeholder="CI-ABJ-2025-B-12345">
+              <input type="text" [(ngModel)]="entreprise.rc" class="form-control" placeholder="RCCM-2024-001">
             </div>
 
             <div class="setting-item">
@@ -292,7 +292,7 @@ import { RouterModule } from '@angular/router';
         </div>
       </div>
 
-      <!-- TAB : ABONNEMENT - VERSION CORRECTE AVEC LES VRAIS PRIX -->
+      <!-- TAB : ABONNEMENT -->
       <div class="tab-content" *ngIf="activeTab === 'abonnement'">
         <div class="settings-card">
           <h2>Mon abonnement</h2>
@@ -336,7 +336,6 @@ import { RouterModule } from '@angular/router';
 
           <h3>Changer de plan</h3>
           <div class="autres-plans">
-            <!-- Plan Startup -->
             <div class="mini-plan startup">
               <h4>Startup</h4>
               <p class="mini-prix">150 000 FCFA/mois</p>
@@ -352,7 +351,6 @@ import { RouterModule } from '@angular/router';
               </button>
             </div>
 
-            <!-- Plan Business (populaire) -->
             <div class="mini-plan business populaire">
               <div class="badge-populaire">🌟 POPULAIRE</div>
               <h4>Business</h4>
@@ -370,7 +368,6 @@ import { RouterModule } from '@angular/router';
               </button>
             </div>
 
-            <!-- Plan Enterprise -->
             <div class="mini-plan enterprise">
               <h4>Enterprise</h4>
               <p class="mini-prix">750 000 FCFA/mois</p>
@@ -387,7 +384,6 @@ import { RouterModule } from '@angular/router';
               </button>
             </div>
 
-            <!-- Plan Corporate -->
             <div class="mini-plan corporate">
               <h4>Corporate</h4>
               <p class="mini-prix">1 500 000 FCFA/mois</p>
@@ -403,34 +399,6 @@ import { RouterModule } from '@angular/router';
                 Choisir
               </button>
             </div>
-          </div>
-
-          <!-- Calculateur de CA potentiel -->
-          <div class="ca-potentiel">
-            <p class="ca-label">💰 Votre potentiel de chiffre d'affaires</p>
-            <div class="ca-grid">
-              <div class="ca-item">
-                <span class="ca-valeur">15M FCFA</span>
-                <span class="ca-desc">avec 100 clients Startup</span>
-              </div>
-              <div class="ca-item">
-                <span class="ca-valeur">17,5M FCFA</span>
-                <span class="ca-desc">avec 50 clients Business</span>
-              </div>
-              <div class="ca-item">
-                <span class="ca-valeur">15M FCFA</span>
-                <span class="ca-desc">avec 20 clients Enterprise</span>
-              </div>
-              <div class="ca-item">
-                <span class="ca-valeur">15M FCFA</span>
-                <span class="ca-desc">avec 10 clients Corporate</span>
-              </div>
-            </div>
-            <p class="ca-total">
-              Total potentiel : <strong>62,5M FCFA/mois</strong><br>
-              <span class="ca-annual">soit 750M FCFA/an</span>
-            </p>
-            <p class="ca-note">* Basé sur les objectifs moyens par plan</p>
           </div>
 
           <div class="plan-cta">
@@ -702,6 +670,8 @@ import { RouterModule } from '@angular/router';
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
     }
 
     .plan-actuel.startup { background: linear-gradient(135deg, #9CA3AF, #6B7280); }
@@ -873,74 +843,6 @@ import { RouterModule } from '@angular/router';
     .mini-plan.enterprise { border-top: 4px solid #9D174D; }
     .mini-plan.corporate { border-top: 4px solid #F59E0B; }
 
-    /* CA potentiel */
-    .ca-potentiel {
-      margin-top: 32px;
-      padding: 24px;
-      background: linear-gradient(135deg, #FDF2F8, #FCE7F3);
-      border-radius: 16px;
-    }
-
-    .ca-label {
-      color: #1F2937;
-      font-weight: 600;
-      font-size: 16px;
-      margin-bottom: 16px;
-    }
-
-    .ca-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .ca-item {
-      background: white;
-      padding: 16px;
-      border-radius: 12px;
-      text-align: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    }
-
-    .ca-valeur {
-      display: block;
-      font-weight: 700;
-      color: #EC4899;
-      font-size: 20px;
-      margin-bottom: 4px;
-    }
-
-    .ca-desc {
-      font-size: 12px;
-      color: #6B7280;
-    }
-
-    .ca-total {
-      text-align: center;
-      font-size: 18px;
-      color: #1F2937;
-      margin: 16px 0 8px;
-    }
-
-    .ca-total strong {
-      color: #EC4899;
-      font-size: 24px;
-    }
-
-    .ca-annual {
-      font-size: 14px;
-      color: #6B7280;
-    }
-
-    .ca-note {
-      text-align: center;
-      color: #9CA3AF;
-      font-size: 11px;
-      font-style: italic;
-      margin: 8px 0 0;
-    }
-
     .plan-cta {
       text-align: center;
       margin-top: 24px;
@@ -998,18 +900,25 @@ import { RouterModule } from '@angular/router';
       }
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 768px) {
       .settings-grid {
         grid-template-columns: 1fr;
       }
       .setting-item.full-width {
         grid-column: span 1;
       }
+    }
+
+    @media (max-width: 640px) {
       .autres-plans {
         grid-template-columns: 1fr;
       }
       .stats-rapides {
         grid-template-columns: 1fr;
+      }
+      .plan-actuel {
+        flex-direction: column;
+        text-align: center;
       }
     }
   `]
@@ -1067,75 +976,16 @@ export class Parametres implements OnInit {
   };
 
   logsConnexion = [
-    { date: new Date('2026-03-12T08:30:00'), ip: '192.168.1.45', appareil: 'Chrome / Mac' },
-    { date: new Date('2026-03-11T18:20:00'), ip: '192.168.1.45', appareil: 'Chrome / Mac' },
-    { date: new Date('2026-03-11T09:15:00'), ip: '192.168.1.45', appareil: 'Chrome / Mac' }
+    { date: new Date(), ip: '192.168.1.45', appareil: 'Chrome / Mac' },
+    { date: new Date(Date.now() - 86400000), ip: '192.168.1.45', appareil: 'Chrome / Mac' },
+    { date: new Date(Date.now() - 172800000), ip: '192.168.1.45', appareil: 'Chrome / Mac' }
   ];
 
-  // ===== ABONNEMENT - VERSION MILLIONNAIRE =====
-  planActuel = 'Business';  // 'Startup', 'Business', 'Enterprise', 'Corporate'
-  prixPlan = 350000;  // 350k pour Business
+  // Abonnement
+  planActuel = 'Business';
+  prixPlan = 350000;
   dateDebut = new Date('2026-01-15');
   prochainPaiement = new Date('2026-04-15');
-
-  autresPlans = [
-    { 
-      id: 'startup', 
-      nom: 'Startup', 
-      prix: 150000,
-      users: 3,
-      features: [
-        '3 utilisateurs',
-        'Clients illimités',
-        'Factures illimitées',
-        'Modules de base',
-        'Support email'
-      ]
-    },
-    { 
-      id: 'business', 
-      nom: 'Business', 
-      prix: 350000,
-      users: 10,
-      populaire: true,
-      features: [
-        '10 utilisateurs',
-        'Clients illimités',
-        'Factures illimitées',
-        'Tous les modules',
-        'Export PDF/Excel',
-        'Support prioritaire'
-      ]
-    },
-    { 
-      id: 'enterprise', 
-      nom: 'Enterprise', 
-      prix: 750000,
-      users: 25,
-      features: [
-        '25 utilisateurs',
-        'Clients illimités',
-        'Factures illimitées',
-        'Modules avancés',
-        'Support téléphonique',
-        'Formation incluse'
-      ]
-    },
-    { 
-      id: 'corporate', 
-      nom: 'Corporate', 
-      prix: 1500000,
-      users: -1, // illimité
-      features: [
-        'Utilisateurs illimités',
-        'Clients illimités',
-        'Factures illimitées',
-        'Multi-sociétés / Filiales',
-        'API personnalisée',
-        'Support dédié 24/7'
-      ]
-    }
-  ];
 
   ngOnInit() {
     this.chargerParametres();
@@ -1149,6 +999,7 @@ export class Parametres implements OnInit {
       this.settings = data.settings || this.settings;
       this.facturation = data.facturation || this.facturation;
       this.notifications = data.notifications || this.notifications;
+      this.securite = data.securite || this.securite;
     }
   }
 
@@ -1157,11 +1008,17 @@ export class Parametres implements OnInit {
   }
 
   changerMotDePasse() {
-    alert('Fonctionnalité à venir : changement de mot de passe');
+    alert('🔐 Fonctionnalité à venir : changement de mot de passe');
   }
 
   changerPlan(planId: string) {
-    const plan = this.autresPlans.find(p => p.id === planId);
+    const plans: any = {
+      startup: { nom: 'Startup', prix: 150000 },
+      business: { nom: 'Business', prix: 350000 },
+      enterprise: { nom: 'Enterprise', prix: 750000 },
+      corporate: { nom: 'Corporate', prix: 1500000 }
+    };
+    const plan = plans[planId];
     if (plan) {
       this.planActuel = plan.nom;
       this.prixPlan = plan.prix;
@@ -1178,7 +1035,8 @@ export class Parametres implements OnInit {
       entreprise: this.entreprise,
       settings: this.settings,
       facturation: this.facturation,
-      notifications: this.notifications
+      notifications: this.notifications,
+      securite: this.securite
     };
     
     localStorage.setItem('pulsebusiness_params', JSON.stringify(allParams));
