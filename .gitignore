@@ -47,3 +47,13 @@ Thumbs.db
 >>>>>>> 8cbf5122322c6ccc9eef719a5eaf8841f071a583
 .vercel
 .env*.local
+
+# Fichiers temporaires et sauvegardes
+backup_exports/
+clean-*.sh
+fix_exports.py
+pricing.component.ts
+src/app/features_backup/
+src/app/features_backup_auto/
+src/app/src/
+ultimate-fix.sh
